@@ -55,3 +55,15 @@
         mode: '0644'
       # 'notify' triggers a handler named 'restart web service' if this task changes something.
       notify: restart web service
+
+    # Task 4: Ensure the web service is started and enabled at boot.
+    - name: Start and enable the web service
+      # 'ansible.builtin.service' manages services (start, stop, enable, etc.).
+      ansible.builtin.service:
+        # 'name' tells the module which service to manage.
+        name: "{{ web_service }}"
+        # 'state' set to 'started' ensures the service is running.
+        state: started
+        # 'enabled' set to yes configures the service to start at boot.
+        enabled: yes
+
