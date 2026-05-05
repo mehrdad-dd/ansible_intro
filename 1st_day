@@ -67,7 +67,6 @@
         # 'enabled' set to yes configures the service to start at boot.
         enabled: yes
 
-
     # Task 5: Use a loop to install additional useful command-line tools.
     - name: Install several helpful packages using a loop
       # Using the same generic package module.
@@ -97,3 +96,12 @@
         # 'msg' specifies the message; here we access the 'stdout' attribute of the registered variable.
         msg: "Disk usage on /: {{ disk_usage.stdout_lines }}"
 
+  # 'handlers' are special tasks that only run when notified by other tasks.
+  handlers:
+    # Handler name matches the string used in the 'notify' directive.
+    - name: restart web service
+      # Handler tasks use the same module syntax as regular tasks.
+      ansible.builtin.service:
+        name: "{{ web_service }}"
+        # 'state' set to 'restarted' stops and then starts the service.
+        state: restarted
