@@ -67,3 +67,17 @@
         # 'enabled' set to yes configures the service to start at boot.
         enabled: yes
 
+
+    # Task 5: Use a loop to install additional useful command-line tools.
+    - name: Install several helpful packages using a loop
+      # Using the same generic package module.
+      ansible.builtin.package:
+        # 'name' becomes the individual item from the loop.
+        name: "{{ item }}"
+        # Ensure each package is present.
+        state: present
+      # 'loop' iterates over a list, running the task once for each item.
+      loop:
+        - curl
+        - git
+        - htop
