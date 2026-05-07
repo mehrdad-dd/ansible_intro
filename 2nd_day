@@ -182,5 +182,120 @@
         force: yes
       # The template will include conditional logic based on app_environment
       tags: [config, environment]
+    # -----------------------------------------------------------------------
+    # TASK GROUP 3: Advanced File Operations
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 3.1] Add specific lines to configuration files using lineinfile"
+      # 'ansible.builtin.lineinfile' ensures a particular line exists in a file
+      ansible.builtin.lineinfile:
+        # 'path' is the file to modify
+        path: /etc/security/limits.conf
+        # 'regexp' is the pattern to search for (determines if line needs updating)
+        regexp: '^{{ item.domain_name }}'
+        # 'line' is the content to ensure is present
+        line: "{{ item.domain_name }} soft nofile {{ item.file_limit }}"
+        # 'insertafter' places the line after a specific pattern (or EOF)
+        insertafter: EOF
+        # 'state: present' ensures the line exists (absent would remove it)
+        state: present
+        # 'backup' creates a backup before modifying
+        backup: yes
+      loop:
+        - { domain_name: "www-data", file_limit: 65535 }
+        - { domain_name: "root", file_limit: 65535 }
+      loop_control:
+        label: "limits.conf: {{ item.domain_name }}"
+      tags: [files, security, limits]
+
+    - name: "[GROUP 3.2] Insert managed configuration blocks using blockinfile"
+      # 'ansible.builtin.blockinfile' inserts/manages a block of text with markers
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        # 'block' is the content (multi-line) to insert
+        block: |
+          {{ database.host }}    db-primary
+          {{ redis.host }}       cache-primary
+          10.0.1.100            monitoring.local
+        # 'marker' customizes the begin/end comment markers
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - {{ app_name }}"
+        # 'marker_begin' and 'marker_end' can override specific markers
+        # 'state: present' ensures the block exists
+        state: present
+        # 'create' creates the file if it doesn't exist
+        create: no
+        backup: yes
+      tags: [files, hosts, networking]
+    
+    - name: "[GROUP 3.3] Upload multiple script files to the server"
+      # 'ansible.builtin.copy' with 'with_fileglob' uploads multiple files
+      ansible.builtin.copy:
+        # 'src' with fileglob iterates through matching local files
+        src: "{{ item }}"
+        dest: "{{ base_path }}/scripts/"
+        owner: "root"
+        group: "www-data"
+        mode: "0755"
+      # 'with_fileglob' finds all .sh files in the local scripts directory
+      with_fileglob:
+        - "files/scripts/*.sh"
+      tags: [scripts, files]
+
+    - name: "[GROUP 3.4] Fetch remote log files to control node"
+      # 'ansible.builtin.fetch' retrieves files from remote nodes
+      ansible.builtin.fetch:
+        # 'src' is the remote file path
+        src: "/var/log/syslog"
+        # 'dest' is the local directory (hostname is automatically appended)
+        dest: "fetched_logs/"
+        # 'flat: no' creates directory structure per host (default)
+        flat: no
+        # 'fail_on_missing: no' doesn't fail if file is absent
+        fail_on_missing: no
+      tags: [fetch, debug, logs]
+
+    # -----------------------------------------------------------------------
+    # TASK GROUP 4: File State Checks and Dynamic Actions
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 4.1] Check if SSL certificates exist using stat"
+      # 'ansible.builtin.stat' retrieves file or filesystem information
+      ansible.builtin.stat:
+        path: "{{ base_path }}/ssl/server.crt"
+      # 'register' saves the stat results to a variable
+      register: ssl_cert_stat
+      tags: [ssl, check]
+
+    - name: "[GROUP 4.2] Generate self-signed SSL certificate if missing"
+      # This task only runs if ssl_cert_stat.stat.exists is false
+      ansible.builtin.command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout {{ base_path }}/ssl/server.key
+        -out {{ base_path }}/ssl/server.crt
+        -subj "/C=US/ST=State/L=City/O={{ app_name }}/CN={{ ansible_fqdn }}"
+      args:
+        # 'creates' is idempotency guard - won't run if file exists
+        creates: "{{ base_path }}/ssl/server.crt"
+        # 'chdir' changes working directory before running command
+        chdir: "{{ base_path }}/ssl"
+      # 'when' conditional ensures task runs only if certificate is missing
+      when: 
+        - ssl_cert_stat.stat.exists == false
+        - features.ssl_enabled == true
+      # 'notify' triggers handler if certificate was generated
+      notify: reload nginx
+      tags: [ssl, security]
+
+    - name: "[GROUP 4.3] Set proper permissions on SSL files"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: "root"
+        group: "www-data"
+        mode: "{{ '0640' if 'crt' in item else '0600' }}"
+        state: file
+      loop:
+        - "{{ base_path }}/ssl/server.crt"
+        - "{{ base_path }}/ssl/server.key"
+      # Only run if certificate exists
+      when: ssl_cert_stat.stat.exists or features.ssl_enabled
+      tags: [ssl, security, permissions]
 
 
