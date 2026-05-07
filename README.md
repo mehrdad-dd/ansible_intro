@@ -9,7 +9,6 @@ Ansible Learning Process for Beginners
 <img src="https://img.shields.io/badge/platform-linux-lightgrey.svg" alt="Platform">
 
 A simple, well-documented Ansible playbook designed to illustrate fundamental Ansible concepts through a practical example: deploying and configuring an Nginx web server.
-
 ---
 
 ## 📋 Table of Contents
