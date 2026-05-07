@@ -182,6 +182,7 @@
         force: yes
       # The template will include conditional logic based on app_environment
       tags: [config, environment]
+
     # -----------------------------------------------------------------------
     # TASK GROUP 3: Advanced File Operations
     # -----------------------------------------------------------------------
@@ -298,7 +299,6 @@
       when: ssl_cert_stat.stat.exists or features.ssl_enabled
       tags: [ssl, security, permissions]
 
-
     # -----------------------------------------------------------------------
     # TASK GROUP 5: Working with Remote Archives and Data
     # -----------------------------------------------------------------------
@@ -345,4 +345,31 @@
         mode: "0644"
       tags: [docs, info]
 
+    # -----------------------------------------------------------------------
+    # TASK GROUP 6: Configuration Validation
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 6.1] Validate Nginx configuration syntax"
+      # Test Nginx config validity without making changes
+      ansible.builtin.command: nginx -t
+      args:
+        # 'chdir' is not needed but good practice
+        chdir: /etc/nginx
+      # 'register' stores the output
+      register: nginx_test
+      # 'changed_when: false' ensures this never shows as changed
+      changed_when: false
+      # 'failed_when' allows custom failure conditions
+      failed_when: 
+        - nginx_test.rc != 0
+        - "'syntax is ok' not in nginx_test.stderr"
+      # 'ignore_errors: true' continues play even if validation fails
+      ignore_errors: yes
+      tags: [validate, nginx, test]
 
+    - name: "[GROUP 6.2] Display validation results"
+      ansible.builtin.debug:
+        msg: |
+          Nginx Configuration Test Results:
+          {{ nginx_test.stderr_lines }}
+      when: nginx_test is defined
+      tags: [debug, validate]
