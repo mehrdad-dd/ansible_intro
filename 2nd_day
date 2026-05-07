@@ -1,1 +1,186 @@
+---
+# ============================================================================
+# STAGE 2: Advanced File Management, Templates & Configurations
+# ============================================================================
+# This playbook demonstrates advanced Ansible capabilities:
+# - Jinja2 templates with complex logic (loops, conditionals, filters)
+# - File manipulation (lineinfile, blockinfile, synchronize)
+# - Dynamic configuration generation based on host facts
+# - Template inheritance and variables scoping
+# - File validation and backup strategies
+# - Working with remote files (fetch, stat)
+# ============================================================================
+
+- name: Stage 2 - Advanced File & Template Management Demo
+  # Target all hosts in the 'staging' group for this advanced demo
+  hosts: all
+  # Enable privilege escalation for system-level file operations
+  become: yes
+  
+  # =========================================================================
+  # VARIABLES SECTION
+  # =========================================================================
+  vars:
+    # Application configuration variables
+    app_name: "MyWebApp"
+    app_version: "2.1.0"
+    app_environment: "production"  # Can be overridden per host
+    
+    # Directory structure variables
+    base_path: "/opt/{{ app_name }}"
+    config_path: "{{ base_path }}/config"
+    log_path: "/var/log/{{ app_name }}"
+    data_path: "/var/lib/{{ app_name }}"
+    
+    # Server roles (for dynamic config generation)
+    server_roles:
+      - web
+      - api
+      - worker
+    
+    # Database connection parameters (will be used in templates)
+    database:
+      host: "db.internal.local"
+      port: 5432
+      name: "{{ app_name }}_db"
+      pool_size: 25
+      timeout: 30
+    
+    # Redis configuration
+    redis:
+      host: "redis.internal.local"
+      port: 6379
+      db: 0
+    
+    # Feature flags (demonstrates boolean logic in templates)
+    features:
+      caching: true
+      compression: true
+      debug_mode: false
+      ssl_enabled: true
+      monitoring: true
+    
+    # Backup configuration
+    backup_enabled: true
+    backup_retention_days: 7
+    
+    # Nginx virtual host configuration
+    nginx_configs:
+      - domain: "example.com"
+        ssl: true
+        upstream_port: 3000
+        worker_connections: 1024
+      - domain: "api.example.com"
+        ssl: true
+        upstream_port: 3001
+        worker_connections: 2048
+      - domain: "admin.example.com"
+        ssl: true
+        upstream_port: 3002
+        worker_connections: 512
+        # IP restriction example
+        allowed_ips:
+          - "10.0.0.0/8"
+          - "172.16.0.0/12"
+    
+    # Environment-specific overrides (example structure)
+    env_configs:
+      development:
+        debug_mode: true
+        log_level: "DEBUG"
+        backup_enabled: false
+      staging:
+        debug_mode: false
+        log_level: "INFO"
+        backup_enabled: true
+      production:
+        debug_mode: false
+        log_level: "WARN"
+        backup_enabled: true
+
+  # =========================================================================
+  # TASKS
+  # =========================================================================
+  tasks:
+    # -----------------------------------------------------------------------
+    # TASK GROUP 1: Directory Structure Creation
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 1.1] Create application directory structure"
+      # 'ansible.builtin.file' manages files, directories, symlinks and their properties
+      ansible.builtin.file:
+        # 'path' specifies the file/directory path to manage
+        path: "{{ item.path }}"
+        # 'state: directory' ensures this is a directory (creates if missing)
+        state: directory
+        # 'owner' and 'group' set the file ownership
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        # 'mode' sets Unix permissions (0755 = rwxr-xr-x)
+        mode: "{{ item.mode | default('0755') }}"
+        # 'recurse' applies ownership changes to all subdirectories (not needed for new dirs)
+        recurse: no
+      # 'loop' creates multiple directories in a single task iteration
+      loop:
+        - { path: "{{ base_path }}", owner: "www-data", group: "www-data" }
+        - { path: "{{ config_path }}", mode: "0750" }
+        - { path: "{{ log_path }}", owner: "www-data", group: "www-data", mode: "0750" }
+        - { path: "{{ data_path }}", owner: "www-data", group: "www-data", mode: "0750" }
+        - { path: "{{ base_path }}/ssl", mode: "0700" }
+        - { path: "{{ base_path }}/backups", mode: "0750" }
+        - { path: "{{ base_path }}/scripts", mode: "0755" }
+      # 'loop_control' customizes loop behavior
+      loop_control:
+        # 'label' shows custom string in output instead of full item data (for readability)
+        label: "{{ item.path }}"
+
+    # -----------------------------------------------------------------------
+    # TASK GROUP 2: Jinja2 Template Deployment
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 2.1] Deploy application configuration from Jinja2 template"
+      # 'ansible.builtin.template' processes Jinja2 templates and deploys the result
+      ansible.builtin.template:
+        # 'src' is the template file path on the control node
+        src: "templates/app_config.yml.j2"
+        # 'dest' is the destination path on the managed node
+        dest: "{{ config_path }}/app_config.yml"
+        owner: "www-data"
+        group: "www-data"
+        mode: "0640"
+        # 'backup' creates a timestamped backup if the file changes
+        backup: "{{ backup_enabled }}"
+        # 'validate' runs a command to verify the generated file (optional)
+        # validate: "python -c 'import yaml; yaml.safe_load(open(\"%s\"))'"
+      # 'notify' triggers a handler if this template changes
+      notify: validate configuration
+      # Tags allow running specific parts of the playbook
+      tags: [config, templates]
+
+    - name: "[GROUP 2.2] Generate Nginx virtual host configurations dynamically"
+      ansible.builtin.template:
+        src: "templates/nginx_vhost.conf.j2"
+        # Uses Jinja2 in dest path to create per-domain config files
+        dest: "/etc/nginx/sites-available/{{ item.domain }}.conf"
+        owner: "root"
+        group: "root"
+        mode: "0644"
+        backup: yes
+      # Loop over the nginx_configs list defined in vars
+      loop: "{{ nginx_configs }}"
+      loop_control:
+        label: "Virtual Host: {{ item.domain }}"
+      notify: reload nginx
+      tags: [nginx, config, templates]
+
+    - name: "[GROUP 2.3] Create environment file using template conditionals"
+      ansible.builtin.template:
+        src: "templates/environment.sh.j2"
+        dest: "{{ config_path }}/environment.sh"
+        owner: "www-data"
+        group: "www-data"
+        mode: "0750"
+        # 'force: yes' overwrites existing files (default behavior)
+        force: yes
+      # The template will include conditional logic based on app_environment
+      tags: [config, environment]
+
 
