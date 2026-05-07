@@ -299,3 +299,50 @@
       tags: [ssl, security, permissions]
 
 
+    # -----------------------------------------------------------------------
+    # TASK GROUP 5: Working with Remote Archives and Data
+    # -----------------------------------------------------------------------
+    - name: "[GROUP 5.1] Create a tarball backup of configuration directory"
+      # 'ansible.builtin.archive' creates compressed archives
+      ansible.builtin.archive:
+        path: "{{ config_path }}"
+        dest: "{{ base_path }}/backups/config_{{ ansible_date_time.date }}.tar.gz"
+        format: gz
+        owner: "root"
+        group: "root"
+        mode: "0640"
+      when: backup_enabled
+      tags: [backup, archive]
+
+    - name: "[GROUP 5.2] Clean old backups (retention policy)"
+      # Use shell command to find and delete old backups
+      ansible.builtin.shell: |
+        find {{ base_path }}/backups -name "config_*.tar.gz" -mtime +{{ backup_retention_days }} -delete
+      args:
+        # 'warn: false' suppresses Ansible warning about using shell
+        warn: false
+      # 'register' captures command output
+      register: cleanup_result
+      # 'changed_when' checks if files were actually deleted
+      changed_when: cleanup_result.stdout != ""
+      when: backup_enabled
+      tags: [backup, cleanup]
+
+    - name: "[GROUP 5.3] Deploy application banner/README in app directory"
+      ansible.builtin.copy:
+        # 'content' creates file with inline content
+        content: |
+          ====================================
+          {{ app_name }} v{{ app_version }}
+          Environment: {{ app_environment }}
+          Deployed by Ansible on: {{ ansible_date_time.iso8601 }}
+          Host: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          ====================================
+        dest: "{{ base_path }}/README.txt"
+        owner: "root"
+        group: "www-data"
+        mode: "0644"
+      tags: [docs, info]
+
+
