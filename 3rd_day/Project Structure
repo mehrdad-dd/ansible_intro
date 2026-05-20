@@ -1,0 +1,12 @@
+stage-3-user-security/
+├── user-security.yml               # Main security playbook
+├── inventory.example.ini            # Example inventory file
+├── README.md                        # This comprehensive guide
+├── templates/
+│   └── sudoers.j2                   # Sudo rules template
+├── files/
+│   ├── ssh_banner.txt               # Custom SSH banner (optional)
+│   └── motd.sh                       # Dynamic MOTD script (optional)
+└── docs/
+    ├── security_checklist.md         # Manual verification steps
+    └── troubleshooting.md            # Common issues & solutions
