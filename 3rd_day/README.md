@@ -24,3 +24,42 @@
 
 ---
 
+## 📊 Playbook Architecture
+
+```mermaid
+graph TB
+    subgraph "Phase 1: Foundation"
+        A[Groups] --> B[Users]
+    end
+    
+    subgraph "Phase 2: Access Control"
+        C[SSH Keys] --> D[Sudo Rules]
+        D --> E[SSH Hardening]
+    end
+    
+    subgraph "Phase 3: Security Policies"
+        F[Password Policies] --> G[Firewall Rules]
+    end
+    
+    subgraph "Phase 4: Audit"
+        H[SUID Scan] --> I[UID Zero Check]
+        I --> J[Password Audit]
+        J --> K[Security Report]
+    end
+    
+    B --> C
+    E --> F
+    G --> H
+    K --> L[✅ Complete]
+    
+    style A fill:#e1f5fe
+    style B fill:#e1f5fe
+    style C fill:#fff3e0
+    style D fill:#fff3e0
+    style E fill:#fff3e0
+    style F fill:#f3e5f5
+    style G fill:#f3e5f5
+    style H fill:#e8f5e9
+    style I fill:#e8f5e9
+    style J fill:#e8f5e9
+    style K fill:#e8f5e9
