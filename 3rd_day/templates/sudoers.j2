@@ -1,0 +1,14 @@
+# {{ ansible_managed }}
+# Sudo rule: {{ item.1.name }}
+# User: {{ item.0.username }}
+# Generated: {{ ansible_date_time.iso8601 }}
+
+# Rule content
+{{ item.1.content }}
+
+# Default secure path (if not specified in rule)
+Defaults    secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# Log sudo commands
+Defaults    logfile="{{ audit_checks.sudo_log_file }}"
+Defaults    log_input, log_output
