@@ -1,0 +1,654 @@
+---
+# ============================================================================
+# STAGE 3: User Management, Security Hardening & Access Control
+# ============================================================================
+# This playbook teaches Ansible security concepts through practical examples:
+# - User and group creation with encrypted passwords
+# - SSH key management and authorized_keys distribution
+# - Sudo privilege configuration with granular rules
+# - System hardening (SSH config, firewall basics, password policies)
+# - Account lifecycle management (disable, expire, remove)
+# - Security auditing and compliance checks
+# ============================================================================
+
+- name: Stage 3 - User Management & Security Hardening
+  # Run against all servers that need security configuration
+  hosts: all
+  # Require root privileges for user management and system config
+  become: yes
+  
+  # =========================================================================
+  # VARIABLES - All configurable security parameters
+  # =========================================================================
+  vars:
+    # ----------------------------------------------------------------
+    # 1. USERS DATABASE - Complete user definitions
+    # ----------------------------------------------------------------
+    # Each user can have: full config, groups, SSH keys, sudo rules
+    system_users:
+      # Developer account with full details
+      - username: alice
+        comment: "Alice Johnson - Senior Developer"
+        uid: 1001
+        groups: [developers, docker]
+        shell: /bin/bash
+        # Generate password: mkpasswd --method=sha-512 'your_password'
+        password: "$6$rounds=656000$salt$encrypted_password_here"
+        update_password: on_create  # Only set password when user is created
+        state: present
+        ssh_keys:
+          - key: "ssh-rsa AAAAB3NzaC1... alice@workstation"
+            state: present
+          - key: "ssh-rsa AAAAB3NzaC1... alice@laptop"
+            state: present
+        sudo_rules:
+          # Name: description for the sudoers file
+          - name: "alice-developer-access"
+            # content: the exact sudoers entry
+            content: "alice ALL=(ALL) ALL"
+            # state: present/absent
+            state: present
+
+      # DevOps engineer with restricted sudo
+      - username: bob
+        comment: "Bob Smith - DevOps Engineer"
+        uid: 1002
+        groups: [devops, docker, sudo]
+        shell: /bin/bash
+        password: "$6$rounds=656000$salt$encrypted_password_here"
+        update_password: on_create
+        state: present
+        ssh_keys:
+          - key: "ssh-rsa AAAAB3NzaC1... bob@workstation"
+            state: present
+        sudo_rules:
+          - name: "bob-devops-access"
+            # Restricted sudo - only specific commands
+            content: "bob ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx, /usr/bin/systemctl reload nginx, /usr/bin/supervisorctl *"
+            state: present
+      
+      # Application service account (no login)
+      - username: appuser
+        comment: "Application Service Account"
+        uid: 1500
+        groups: [www-data, developers]
+        # /usr/sbin/nologin prevents interactive login
+        shell: /usr/sbin/nologin
+        # No password for service accounts
+        password: "!"
+        state: present
+        # Generate unique SSH key pair for this service account
+        generate_ssh_key: yes
+        ssh_key_bits: 4096
+        ssh_key_type: rsa
+        ssh_key_comment: "appuser@{{ ansible_hostname }}"
+        sudo_rules: []
+
+      # Temporary contractor account (will be disabled)
+      - username: contractor_temp
+        comment: "Temporary Contractor"
+        uid: 2000
+        groups: [contractors]
+        shell: /bin/bash
+        password: "$6$rounds=656000$salt$encrypted_password_here"
+        state: absent  # Will be removed
+        ssh_keys:
+          - key: "ssh-rsa AAAAB3NzaC1... contractor@temp"
+            state: absent  # SSH key will be removed
+        sudo_rules:
+          - name: "contractor-temp"
+            content: "contractor_temp ALL=(ALL) ALL"
+            state: absent  # Sudo rule will be removed
+
+    # ----------------------------------------------------------------
+    # 2. GROUPS DATABASE - System groups configuration
+    # ----------------------------------------------------------------
+    system_groups:
+      - name: developers
+        gid: 2001
+        state: present
+      - name: devops
+        gid: 2002
+        state: present
+      - name: contractors
+        gid: 2003
+        state: present
+      - name: auditors
+        gid: 2004
+        state: present
+
+    # ----------------------------------------------------------------
+    # 3. SSH HARDENING - Security configurations
+    # ----------------------------------------------------------------
+    ssh_config:
+      # Port to run SSH on (non-standard for security)
+      port: 2222
+      # Disable root login via SSH
+      permit_root_login: "no"
+      # Disable password authentication (key-only)
+      password_authentication: "no"
+      # Maximum authentication attempts
+      max_auth_tries: 3
+      # Login grace period in seconds
+      login_grace_time: 30
+      # Disable empty passwords
+      permit_empty_passwords: "no"
+      # Allowed authentication methods
+      authentication_methods: "publickey"
+      # Disable X11 forwarding unless needed
+      x11_forwarding: "no"
+      # Client alive interval for detecting dead connections
+      client_alive_interval: 300
+      client_alive_count_max: 2
+
+    # ----------------------------------------------------------------
+    # 4. PASSWORD POLICY - PAM configuration
+    # ----------------------------------------------------------------
+    password_policy:
+      min_length: 12
+      max_days: 90
+      min_days: 1
+      warn_days: 7
+      remember: 5  # Remember last N passwords to prevent reuse
+      # Password complexity via libpwquality
+      minclass: 3  # Minimum character classes (uppercase, lowercase, digit, special)
+      maxrepeat: 3  # Maximum repeated characters
+      difok: 5  # Minimum characters different from old password
+
+    # ----------------------------------------------------------------
+    # 5. FIREWALL RULES - Basic UFW configuration
+    # ----------------------------------------------------------------
+    ufw_rules:
+      # Allow rules
+      allow:
+        - port: "{{ ssh_config.port }}"
+          proto: tcp
+          comment: "Custom SSH port"
+        - port: 80
+          proto: tcp
+          comment: "HTTP"
+        - port: 443
+          proto: tcp
+          comment: "HTTPS"
+      # Deny rules
+      deny:
+        - port: 23
+          proto: tcp
+          comment: "Telnet - insecure"
+        - port: 21
+          proto: tcp
+          comment: "FTP - insecure"
+      # Default policies
+      default_policy:
+        incoming: deny
+        outgoing: allow
+
+    # ----------------------------------------------------------------
+    # 6. AUDIT & MONITORING
+    # ----------------------------------------------------------------
+    audit_checks:
+      # Check for unauthorized sudo access
+      sudo_log_file: /var/log/sudo.log
+      # Monitor auth logs for suspicious activity
+      monitor_auth_log: yes
+      # Check for files with SUID/SGID bits
+      scan_suid_files: yes
+      # Report users with UID 0 (root equivalent)
+      check_uid_zero: yes
+
+  # =========================================================================
+  # TASKS - Step by step security implementation
+  # =========================================================================
+  tasks:
+    # =====================================================================
+    # SECTION 1: GROUP MANAGEMENT
+    # =====================================================================
+    - name: "[SECTION 1.1] Display current groups before changes"
+      ansible.builtin.debug:
+        msg: "Managing {{ system_groups | length }} groups on {{ ansible_hostname }}"
+      tags: [always]
+
+    - name: "[SECTION 1.2] Create system groups with specific GIDs"
+      # 'ansible.builtin.group' manages groups on the system
+      ansible.builtin.group:
+        # 'name' is the group name
+        name: "{{ item.name }}"
+        # 'gid' sets a specific group ID (optional)
+        gid: "{{ item.gid | default(omit) }}"
+        # 'state: present' creates the group
+        state: "{{ item.state | default('present') }}"
+        # 'system: no' creates a regular group (system=yes for system groups)
+        system: no
+      # 'loop' processes all groups defined in system_groups
+      loop: "{{ system_groups }}"
+      loop_control:
+        # 'label' shows group name instead of full dictionary
+        label: "Group: {{ item.name }} (GID: {{ item.gid }})"
+      tags: [groups, setup]
+
+    # =====================================================================
+    # SECTION 2: USER CREATION & MANAGEMENT
+    # =====================================================================
+    - name: "[SECTION 2.1] Create user accounts with all configurations"
+      # 'ansible.builtin.user' manages user accounts
+      ansible.builtin.user:
+        # 'name' is the username
+        name: "{{ item.username }}"
+        # 'comment' sets the GECOS field (full name)
+        comment: "{{ item.comment }}"
+        # 'uid' sets a specific user ID
+        uid: "{{ item.uid | default(omit) }}"
+        # 'group' sets primary group (defaults to username)
+        group: "{{ item.groups[0] | default(item.username) }}"
+        # 'groups' adds user to supplementary groups
+        groups: "{{ item.groups | join(',') }}"
+        # 'append: yes' adds to groups without removing from others
+        append: yes
+        # 'shell' sets the login shell
+        shell: "{{ item.shell }}"
+        # 'password' sets encrypted password hash
+        password: "{{ item.password }}"
+        # 'update_password' controls when password is updated
+        #   'always' - update if changed (default)
+        #   'on_create' - only set for new users
+        update_password: "{{ item.update_password | default('always') }}"
+        # 'state: present' creates/updates user
+        state: "{{ item.state }}"
+        # 'create_home: yes' creates home directory
+        create_home: yes
+        # 'move_home: yes' moves home if home directory path changed
+        move_home: yes
+        # 'skeleton' directory for new home (optional)
+        # skeleton: /etc/skel
+      # Only process users that should be present
+      loop: "{{ system_users }}"
+      loop_control:
+        label: "User: {{ item.username }} (State: {{ item.state }})"
+      # 'register' saves results for later use
+      register: user_creation_results
+      tags: [users, setup]
+
+    - name: "[SECTION 2.2] Display users that were created or modified"
+      ansible.builtin.debug:
+        msg: |
+          User management results for {{ ansible_hostname }}:
+          {% for result in user_creation_results.results %}
+          - {{ result.item.username }}: {{ 'Created' if result.changed else 'Already exists' }}
+          {% endfor %}
+      # Only show when something changed
+      when: user_creation_results.changed
+      tags: [users, debug]
+
+    # =====================================================================
+    # SECTION 3: SSH KEY MANAGEMENT
+    # =====================================================================
+    - name: "[SECTION 3.1] Generate SSH key pairs for service accounts"
+      # 'ansible.builtin.openssh_keypair' generates SSH key pairs
+      ansible.builtin.openssh_keypair:
+        # 'path' is where the private key will be saved
+        path: "/home/{{ item.username }}/.ssh/id_{{ item.ssh_key_type }}"
+        # 'type' is the key algorithm (rsa, ed25519, ecdsa)
+        type: "{{ item.ssh_key_type }}"
+        # 'size' is the key bits (ignored for ed25519)
+        size: "{{ item.ssh_key_bits }}"
+        # 'comment' adds identifier to public key
+        comment: "{{ item.ssh_key_comment }}"
+        # 'owner' and 'group' set file ownership
+        owner: "{{ item.username }}"
+        group: "{{ item.groups[0] | default(item.username) }}"
+        # 'mode' is 0600 for private key (owner read/write only)
+        mode: '0600'
+        # 'force: no' won't overwrite existing key
+        force: no
+      # Only for users with generate_ssh_key flag
+      loop: "{{ system_users | selectattr('generate_ssh_key', 'defined') | selectattr('generate_ssh_key', 'equalto', yes) | list }}"
+      loop_control:
+        label: "SSH Key: {{ item.username }}"
+      when: item.state == 'present'
+      tags: [ssh, keys]
+
+    - name: "[SECTION 3.2] Deploy authorized SSH keys for users"
+      # 'ansible.posix.authorized_key' manages SSH authorized_keys
+      ansible.posix.authorized_key:
+        # 'user' is the account to manage keys for
+        user: "{{ item.0.username }}"
+        # 'key' is the SSH public key string
+        key: "{{ item.1.key }}"
+        # 'state: present' adds the key
+        state: "{{ item.1.state }}"
+        # 'key_options' can add restrictions (from="IP", command="cmd", etc.)
+        # key_options: 'from="10.0.0.0/8",no-port-forwarding'
+        # 'exclusive: no' doesn't remove other keys not in this list
+        exclusive: no
+        # 'comment' adds identifier in authorized_keys
+        comment: "{{ item.1.key.split(' ')[-1] | default('deployed-by-ansible') }}"
+        # 'manage_dir: yes' creates .ssh directory if missing
+        manage_dir: yes
+      # 'with_subelements' iterates over users and their ssh_keys list
+      # item.0 = user object, item.1 = individual ssh_key
+      loop: "{{ system_users | selectattr('ssh_keys', 'defined') | subelements('ssh_keys') }}"
+      loop_control:
+        label: "SSH Key for {{ item.0.username }}: {{ item.1.key.split(' ')[-1][:30] }}..."
+      # Only for active users
+      when: 
+        - item.0.state == 'present'
+        - item.1.state == 'present'
+      tags: [ssh, keys, security]
+
+    # =====================================================================
+    # SECTION 4: SUDO PRIVILEGE MANAGEMENT
+    # =====================================================================
+    - name: "[SECTION 4.1] Configure sudo rules for privileged users"
+      # 'ansible.builtin.template' uses Jinja2 for sudoers snippets
+      ansible.builtin.template:
+        src: sudoers.j2
+        # Sudo rules go in /etc/sudoers.d/ directory
+        dest: "/etc/sudoers.d/{{ item.0.username }}-{{ item.1.name }}"
+        owner: root
+        group: root
+        # 'mode: 0440' is required for sudoers files
+        mode: '0440'
+        # 'validate' checks sudoers syntax before applying
+        validate: 'visudo -cf %s'
+      # Iterate over users and their sudo_rules
+      loop: "{{ system_users | selectattr('sudo_rules', 'defined') | subelements('sudo_rules') }}"
+      loop_control:
+        label: "Sudo rule for {{ item.0.username }}: {{ item.1.name }}"
+      when:
+        - item.0.state == 'present'
+        - item.1.state == 'present'
+      tags: [sudo, security, permissions]
+
+    - name: "[SECTION 4.2] Remove sudo rules for deleted/disabled users"
+      ansible.builtin.file:
+        path: "/etc/sudoers.d/{{ item.0.username }}-{{ item.1.name }}"
+        state: absent
+      loop: "{{ system_users | selectattr('sudo_rules', 'defined') | subelements('sudo_rules') }}"
+      loop_control:
+        label: "Removing sudo: {{ item.0.username }}"
+      when:
+        - item.0.state != 'present' or item.1.state != 'present'
+      tags: [sudo, cleanup, security]
+
+    # =====================================================================
+    # SECTION 5: SSH SERVER HARDENING
+    # =====================================================================
+    - name: "[SECTION 5.1] Backup original SSH configuration"
+      ansible.builtin.copy:
+        src: /etc/ssh/sshd_config
+        dest: "/etc/ssh/sshd_config.backup-{{ ansible_date_time.epoch }}"
+        owner: root
+        group: root
+        mode: '0600'
+        remote_src: yes
+      tags: [ssh, backup, security]
+
+    - name: "[SECTION 5.2] Apply SSH hardening configurations"
+      # 'ansible.builtin.lineinfile' ensures specific config lines exist
+      ansible.builtin.lineinfile:
+        # Target the SSH daemon config file
+        path: /etc/ssh/sshd_config
+        # Search for existing config line (case insensitive)
+        regexp: "^(#)?{{ item.key }}\\s+"
+        # Set the new value
+        line: "{{ item.key }} {{ item.value }}"
+        # 'state: present' ensures the line exists
+        state: present
+        # 'validate' tests SSH config before restart
+        validate: 'sshd -t -f %s'
+        backup: yes
+      # Loop through all SSH configuration parameters
+      loop:
+        - { key: "Port", value: "{{ ssh_config.port }}" }
+        - { key: "PermitRootLogin", value: "{{ ssh_config.permit_root_login }}" }
+        - { key: "PasswordAuthentication", value: "{{ ssh_config.password_authentication }}" }
+        - { key: "MaxAuthTries", value: "{{ ssh_config.max_auth_tries }}" }
+        - { key: "LoginGraceTime", value: "{{ ssh_config.login_grace_time }}" }
+        - { key: "PermitEmptyPasswords", value: "{{ ssh_config.permit_empty_passwords }}" }
+        - { key: "AuthenticationMethods", value: "{{ ssh_config.authentication_methods }}" }
+        - { key: "X11Forwarding", value: "{{ ssh_config.x11_forwarding }}" }
+        - { key: "ClientAliveInterval", value: "{{ ssh_config.client_alive_interval }}" }
+        - { key: "ClientAliveCountMax", value: "{{ ssh_config.client_alive_count_max }}" }
+      loop_control:
+        label: "SSH Config: {{ item.key }} = {{ item.value }}"
+      # 'notify' triggers SSH restart only if config changed
+      notify: restart sshd
+      tags: [ssh, hardening, security]
+
+    # =====================================================================
+    # SECTION 6: PASSWORD POLICY ENFORCEMENT
+    # =====================================================================
+    - name: "[SECTION 6.1] Configure password aging policies"
+      # 'ansible.builtin.lineinfile' for /etc/login.defs
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: "^{{ item.key }}\\s+"
+        line: "{{ item.key }} {{ item.value }}"
+        state: present
+        backup: yes
+      loop:
+        - { key: "PASS_MAX_DAYS", value: "{{ password_policy.max_days }}" }
+        - { key: "PASS_MIN_DAYS", value: "{{ password_policy.min_days }}" }
+        - { key: "PASS_WARN_AGE", value: "{{ password_policy.warn_days }}" }
+      loop_control:
+        label: "Password Policy: {{ item.key }} = {{ item.value }}"
+      tags: [password, policy, security]
+
+    - name: "[SECTION 6.2] Apply password quality requirements"
+      ansible.builtin.lineinfile:
+        path: /etc/security/pwquality.conf
+        regexp: "^{{ item.key }}"
+        line: "{{ item.key }} = {{ item.value }}"
+        state: present
+        create: yes
+        backup: yes
+      loop:
+        - { key: "minlen", value: "{{ password_policy.min_length }}" }
+        - { key: "minclass", value: "{{ password_policy.minclass }}" }
+        - { key: "maxrepeat", value: "{{ password_policy.maxrepeat }}" }
+        - { key: "difok", value: "{{ password_policy.difok }}" }
+      loop_control:
+        label: "Password Quality: {{ item.key }} = {{ item.value }}"
+      tags: [password, quality, security]
+
+    - name: "[SECTION 6.3] Enforce password history (remember last N passwords)"
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/common-password
+        regexp: "pam_pwhistory.so"
+        line: "password required pam_pwhistory.so remember={{ password_policy.remember }} use_authtok"
+        insertafter: "pam_unix.so"
+        state: present
+        backup: yes
+      tags: [password, history, security]
+
+    # =====================================================================
+    # SECTION 7: FIREWALL CONFIGURATION (UFW)
+    # =====================================================================
+    - name: "[SECTION 7.1] Install UFW firewall package"
+      ansible.builtin.package:
+        name: ufw
+        state: present
+      tags: [firewall, ufw, security]
+
+    - name: "[SECTION 7.2] Reset UFW to default state (clean configuration)"
+      ansible.builtin.ufw:
+        state: reset
+      tags: [firewall, ufw, security]
+
+    - name: "[SECTION 7.3] Configure UFW default policies"
+      ansible.builtin.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+        state: enabled
+      loop:
+        - { direction: "incoming", policy: "{{ ufw_rules.default_policy.incoming }}" }
+        - { direction: "outgoing", policy: "{{ ufw_rules.default_policy.outgoing }}" }
+      loop_control:
+        label: "Default {{ item.direction }}: {{ item.policy }}"
+      tags: [firewall, ufw, security]
+
+    - name: "[SECTION 7.4] Allow required services through firewall"
+      ansible.builtin.ufw:
+        # 'rule' can be 'allow', 'deny', 'reject'
+        rule: allow
+        # 'port' with protocol specification
+        port: "{{ item.port }}"
+        # 'proto' is tcp, udp, or any
+        proto: "{{ item.proto }}"
+        # 'comment' adds description to rule
+        comment: "{{ item.comment }}"
+      loop: "{{ ufw_rules.allow }}"
+      loop_control:
+        label: "Allow: {{ item.port }}/{{ item.proto }}"
+      tags: [firewall, ufw, security]
+
+    - name: "[SECTION 7.5] Block insecure services"
+      ansible.builtin.ufw:
+        rule: deny
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ ufw_rules.deny }}"
+      loop_control:
+        label: "Block: {{ item.port }}/{{ item.proto }}"
+      tags: [firewall, ufw, security]
+
+    - name: "[SECTION 7.6] Enable UFW and ensure it starts on boot"
+      ansible.builtin.ufw:
+        state: enabled
+        # 'logging: on' enables UFW logging (useful for auditing)
+        logging: 'on'
+      tags: [firewall, ufw, security]
+
+    # =====================================================================
+    # SECTION 8: SECURITY AUDITING & COMPLIANCE
+    # =====================================================================
+    - name: "[SECTION 8.1] Scan for files with SUID/SGID bits"
+      # Find files with setuid/setgid bits (potential security risk)
+      ansible.builtin.shell: |
+        find / -type f \( -perm -4000 -o -perm -2000 \) \
+          -not -path "/proc/*" \
+          -not -path "/sys/*" \
+          -not -path "/snap/*" \
+          2>/dev/null
+      register: suid_files
+      changed_when: false
+      when: audit_checks.scan_suid_files
+      tags: [audit, suid, security]
+
+    - name: "[SECTION 8.2] Display SUID/SGID files report"
+      ansible.builtin.debug:
+        msg: |
+          SUID/SGID Files Found on {{ ansible_hostname }}:
+          {% if suid_files.stdout_lines | length > 0 %}
+          {% for file in suid_files.stdout_lines %}
+          - {{ file }}
+          {% endfor %}
+          {% else %}
+          No SUID/SGID files found (unusual - check system)
+          {% endif %}
+      when: audit_checks.scan_suid_files
+      tags: [audit, debug, security]
+
+    - name: "[SECTION 8.3] Check for users with UID 0 (root equivalent)"
+      ansible.builtin.shell: |
+        awk -F: '($3 == 0) { print $1 }' /etc/passwd
+      register: uid_zero_users
+      changed_when: false
+      when: audit_checks.check_uid_zero
+      tags: [audit, users, security]
+
+    - name: "[SECTION 8.4] Alert if multiple UID 0 users found"
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  WARNING: Users with UID 0 (root equivalent) on {{ ansible_hostname }}:
+          {{ uid_zero_users.stdout_lines | join(', ') }}
+          
+          Only 'root' should have UID 0! Review these accounts immediately.
+      when: 
+        - audit_checks.check_uid_zero
+        - uid_zero_users.stdout_lines | length > 1
+      tags: [audit, security, alert]
+
+    - name: "[SECTION 8.5] Check for accounts with empty passwords"
+      ansible.builtin.shell: |
+        awk -F: '($2 == "" || $2 == "!") { print $1 " (locked or no password)" }' /etc/shadow
+      register: empty_password_accounts
+      changed_when: false
+      tags: [audit, passwords, security]
+
+    - name: "[SECTION 8.6] Show password audit results"
+      ansible.builtin.debug:
+        msg: |
+          🔒 Password Status Report for {{ ansible_hostname }}:
+          Accounts without valid passwords:
+          {% for account in empty_password_accounts.stdout_lines %}
+          - {{ account }}
+          {% endfor %}
+      tags: [audit, debug, security]
+
+    - name: "[SECTION 8.7] Generate security report summary"
+      # Create a comprehensive security report
+      ansible.builtin.copy:
+        content: |
+          ============================================
+          SECURITY AUDIT REPORT
+          Host: {{ ansible_hostname }} ({{ ansible_fqdn }})
+          Date: {{ ansible_date_time.iso8601 }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          ============================================
+          
+          USERS CREATED:
+          {% for user in system_users %}
+          {% if user.state == 'present' %}
+          - {{ user.username }} ({{ user.comment }})
+          {% endif %}
+          {% endfor %}
+          
+          SSH CONFIGURATION:
+          - Port: {{ ssh_config.port }}
+          - Root Login: {{ ssh_config.permit_root_login }}
+          - Password Auth: {{ ssh_config.password_authentication }}
+          
+          FIREWALL RULES:
+          - Default Incoming: {{ ufw_rules.default_policy.incoming }}
+          - Allowed Ports: {{ ufw_rules.allow | map(attribute='port') | join(', ') }}
+          
+          SECURITY WARNINGS:
+          {% if uid_zero_users.stdout_lines | length > 1 %}
+          ⚠️  Multiple UID 0 accounts detected!
+          {% endif %}
+          {% if suid_files.stdout_lines | length > 20 %}
+          ⚠️  High number of SUID/SGID files ({{ suid_files.stdout_lines | length }})
+          {% endif %}
+          
+          ============================================
+          Generated by Ansible Security Playbook
+          ============================================
+        dest: "/root/security_report_{{ ansible_date_time.date }}.txt"
+        owner: root
+        group: root
+        mode: '0600'
+      tags: [audit, report, security]
+
+  # =========================================================================
+  # HANDLERS - Triggered actions
+  # =========================================================================
+  handlers:
+    - name: restart sshd
+      # Restart SSH daemon after configuration changes
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      # Note: This won't disconnect current session
+      # New SSH port takes effect for new connections only
+      listen: "ssh_config_changed"
+      tags: [ssh, handlers]
+
+    - name: reload sshd
+      # Reload is safer than restart (doesn't drop connections)
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
+      listen: "ssh_config_updated"
+      tags: [ssh, handlers]
