@@ -1,0 +1,15 @@
+# Reset to clean state first
+- ufw:
+    state: reset
+
+# Set defaults
+- ufw:
+    direction: incoming
+    policy: deny
+
+# Allow specific services
+- ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment }}"
