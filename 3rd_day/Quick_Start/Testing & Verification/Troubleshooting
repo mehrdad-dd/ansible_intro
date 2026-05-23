@@ -1,9 +1,11 @@
-Troubleshooting
-Issue	Solution
-User creation fails	Check UID conflicts: cat /etc/passwd | grep 1001
-SSH key not working	Verify .ssh permissions: ls -la /home/user/.ssh (must be 700)
-Sudo validation fails	Test manually: visudo -cf /etc/sudoers.d/file
-SSH won't restart	Check config: sshd -t and review /etc/ssh/sshd_config
-UFW not installing	Ensure universe repo: apt-add-repository universe
-Password hash errors	Verify hash format: should start with $6$ for SHA-512
-Connection lost after SSH change	Open backup connection before running, test new port first
+# Troubleshooting Guide
+
+| Issue | Solution |
+|-------|----------|
+| User creation fails | Check UID conflicts: `cat /etc/passwd \| grep 1001` |
+| SSH key not working | Verify .ssh permissions: `ls -la /home/user/.ssh` (must be 700) |
+| Sudo validation fails | Test manually: `visudo -cf /etc/sudoers.d/file` |
+| SSH won't restart | Check config: `sshd -t` and review `/etc/ssh/sshd_config` |
+| UFW not installing | Ensure universe repo: `apt-add-repository universe` |
+| Password hash errors | Verify hash format: should start with `$6$` for SHA-512 |
+| Connection lost after SSH change | Open backup connection before running, test new port first |
