@@ -1,0 +1,9 @@
+# Check if users exist
+ansible all -m command -a "id alice"
+ansible all -m command -a "id bob"
+
+# Verify SSH keys deployed
+ansible all -m command -a "cat /home/alice/.ssh/authorized_keys"
+
+# Check sudo rules
+ansible all -m command -a "sudo -l -U alice"
