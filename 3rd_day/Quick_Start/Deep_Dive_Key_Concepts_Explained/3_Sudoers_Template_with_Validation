@@ -1,0 +1,6 @@
+# Template with syntax validation
+- template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ user }}-{{ rule }}"
+    validate: 'visudo -cf %s'  # Validates before writing!
+    mode: '0440'  # Must be 0440 for sudoers
