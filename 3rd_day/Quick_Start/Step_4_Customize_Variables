@@ -1,1 +1,9 @@
+Edit user-security.yml and update:
 
+    system_users - Add your team members
+
+    ssh_config.port - Choose non-standard SSH port
+
+    password_policy - Match company requirements
+
+    ufw_rules - Configure for your services
