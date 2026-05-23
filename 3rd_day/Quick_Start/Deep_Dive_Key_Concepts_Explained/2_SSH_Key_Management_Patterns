@@ -1,1 +1,10 @@
+# Using subelements for user-key relationship
+loop: "{{ system_users | subelements('ssh_keys') }}"
+# item.0 = user object
+# item.1 = individual SSH key
 
+# Generate keys for service accounts
+- openssh_keypair:
+    path: "/home/{{ user }}/.ssh/id_rsa"
+    type: rsa
+    size: 4096
