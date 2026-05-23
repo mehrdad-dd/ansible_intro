@@ -1,0 +1,5 @@
+# If locked out, use console access:
+# 1. Login via console/direct terminal
+# 2. Stop SSH service: systemctl stop sshd
+# 3. Restore backup: cp /etc/ssh/sshd_config.backup-* /etc/ssh/sshd_config
+# 4. Start SSH: systemctl start sshd
