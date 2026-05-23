@@ -1,0 +1,52 @@
+PLAY [Stage 3 - User Management & Security Hardening] **********************
+
+TASK [[SECTION 1.1] Display current groups before changes] ****************
+ok: [web-prod-01] => {
+    "msg": "Managing 4 groups on web-prod-01"
+}
+
+TASK [[SECTION 1.2] Create system groups with specific GIDs] *************
+changed: [web-prod-01] => (item=Group: developers (GID: 2001))
+changed: [web-prod-01] => (item=Group: devops (GID: 2002))
+ok: [web-prod-01] => (item=Group: contractors (GID: 2003))
+ok: [web-prod-01] => (item=Group: auditors (GID: 2004))
+
+TASK [[SECTION 2.1] Create user accounts with all configurations] *******
+changed: [web-prod-01] => (item=User: alice (State: present))
+changed: [web-prod-01] => (item=User: bob (State: present))
+changed: [web-prod-01] => (item=User: appuser (State: present))
+absent: [web-prod-01] => (item=User: contractor_temp (State: absent))
+
+TASK [[SECTION 3.1] Generate SSH key pairs for service accounts] ********
+changed: [web-prod-01] => (item=SSH Key: appuser)
+
+TASK [[SECTION 3.2] Deploy authorized SSH keys for users] ***************
+changed: [web-prod-01] => (item=SSH Key for alice: alice@workstation...)
+changed: [web-prod-01] => (item=SSH Key for alice: alice@laptop...)
+changed: [web-prod-01] => (item=SSH Key for bob: bob@workstation...)
+
+TASK [[SECTION 4.1] Configure sudo rules for privileged users] **********
+changed: [web-prod-01] => (item=Sudo rule for alice: alice-developer-access)
+changed: [web-prod-01] => (item=Sudo rule for bob: bob-devops-access)
+
+TASK [[SECTION 5.2] Apply SSH hardening configurations] *****************
+changed: [web-prod-01] => (item=SSH Config: Port = 2222)
+changed: [web-prod-01] => (item=SSH Config: PermitRootLogin = no)
+changed: [web-prod-01] => (item=SSH Config: PasswordAuthentication = no)
+ok: [web-prod-01] => (item=SSH Config: MaxAuthTries = 3)
+
+TASK [[SECTION 6.1] Configure password aging policies] ******************
+changed: [web-prod-01] => (item=Password Policy: PASS_MAX_DAYS = 90)
+changed: [web-prod-01] => (item=Password Policy: PASS_MIN_DAYS = 1)
+changed: [web-prod-01] => (item=Password Policy: PASS_WARN_AGE = 7)
+
+TASK [[SECTION 7.4] Allow required services through firewall] ***********
+changed: [web-prod-01] => (item=Allow: 2222/tcp)
+changed: [web-prod-01] => (item=Allow: 80/tcp)
+changed: [web-prod-01] => (item=Allow: 443/tcp)
+
+RUNNING HANDLER [restart sshd] ******************************************
+changed: [web-prod-01]
+
+PLAY RECAP **************************************************************
+web-prod-01    : ok=23   changed=18   unreachable=0   failed=0
