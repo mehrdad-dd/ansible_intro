@@ -1,0 +1,33 @@
+Exercises & Challenges
+
+    Add a new team member with:
+
+        Two SSH keys from different devices
+
+        Sudo access only for specific service restart commands
+
+        Password that expires in 30 days
+
+    Modify SSH configuration to:
+
+        Listen on both IPv4 and IPv6
+
+        Add custom banner from files/ssh_banner.txt
+
+        Enable 2FA with AuthenticationMethods publickey,keyboard-interactive
+
+    Create a custom MOTD script that displays:
+
+        System information
+
+        Last login
+
+        Security patch status
+
+    Implement fail2ban rules to:
+
+        Block IPs after 3 failed SSH attempts
+
+        Send email alerts for repeated failures
+
+    Add SELinux/AppArmor profile management tasks
