@@ -2,9 +2,9 @@
 **Practice**	                      **Implementation**
 Principle of Least Privilege	      Granular sudo rules per user/role
 Key-Based Authentication Only	      Disable password SSH auth
-Defense in Depth	               Multiple security layers (SSH, firewall, PAM)
-Audit Logging	                        Sudo command logging, security reports
-Secure Defaults	                        Deny-all firewall, strong password policies
-Regular Auditing	              SUID scans, UID 0 checks, password audits
-Configuration Validation	      validate parameter on all critical configs
+Defense in Depth	                 Multiple security layers (SSH, firewall, PAM)
+Audit Logging	                       Sudo command logging, security reports
+Secure Defaults	                      Deny-all firewall, strong password policies
+Regular Auditing	                SUID scans, UID 0 checks, password audits
+Configuration Validation	        validate parameter on all critical configs
 Backup Before Changes	             Automatic backups of modified system files
