@@ -1,1 +1,11 @@
+# First - Check mode (see what would change)
+ansible-playbook -i inventory.ini user-security.yml --check --diff
 
+# Second - Run with verbose output to understand
+ansible-playbook -i inventory.ini user-security.yml -v
+
+# Third - Run specific sections with tags
+ansible-playbook -i inventory.ini user-security.yml --tags "users,ssh"
+
+# Full execution
+ansible-playbook -i inventory.ini user-security.yml
