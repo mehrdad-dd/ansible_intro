@@ -1,0 +1,8 @@
+# Try connecting with new port
+ssh -p 2222 alice@server-ip
+
+# Verify SSH config
+ansible all -m command -a "sshd -T | grep -E 'port|permitroot|passwordauth'"
+
+# Scan open ports
+nmap -p 1-65535 server-ip
