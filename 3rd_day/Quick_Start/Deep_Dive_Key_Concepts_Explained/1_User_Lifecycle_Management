@@ -1,1 +1,12 @@
-
+# Creating a user with full configuration
+- user:
+    name: alice
+    groups: [developers, docker]
+    append: yes        # Add to groups, don't remove from others
+    update_password: on_create  # Only set password for new users
+    
+# Removing a user (state: absent)
+- user:
+    name: contractor_temp
+    state: absent
+    remove: yes  # Also remove home directory and mail spool
