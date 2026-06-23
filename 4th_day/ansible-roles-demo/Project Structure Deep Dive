@@ -1,0 +1,44 @@
+ansible-roles-demo/
+│
+├── ansible.cfg                    # ⚙️ Central configuration
+│   ├── [defaults]                 # Inventory, roles path, caching
+│   ├── [ssh_connection]           # SSH optimization
+│   └── [privilege_escalation]     # Sudo settings
+│
+├── inventory/                     # 📋 Server inventories
+│   ├── production/                # 🏭 Production environment
+│   │   ├── hosts.yml              # Server definitions
+│   │   ├── group_vars/            # Group-level variables
+│   │   │   ├── all.yml            # Applies to all hosts
+│   │   │   ├── webservers.yml     # Web server specific
+│   │   │   └── dbservers.yml      # Database specific
+│   │   └── host_vars/             # Host-specific variables
+│   │       ├── web01.yml          # Overrides for web01
+│   │       └── db01.yml           # Overrides for db01
+│   └── staging/                   # 🧪 Staging environment
+│       └── hosts.yml
+│
+├── playbooks/                     # 🎮 Playbooks
+│   ├── site.yml                   # Main playbook (orchestrator)
+│   ├── webservers.yml             # Web servers only
+│   ├── dbservers.yml              # Database only
+│   └── deploy_app.yml             # Application deployment
+│
+└── roles/                         # 🧩 Reusable roles
+    ├── common/                    # Base configuration for all servers
+    │   ├── tasks/                 # Task files
+    │   │   ├── main.yml           # Entry point (include other files)
+    │   │   ├── packages.yml       # Package installation
+    │   │   ├── security.yml       # Security hardening
+    │   │   └── monitoring.yml     # Monitoring agents
+    │   ├── handlers/main.yml      # Handlers (restart services)
+    │   ├── templates/             # Jinja2 templates (*.j2)
+    │   ├── files/                 # Static files (copied as-is)
+    │   ├── vars/main.yml          # High-priority variables
+    │   ├── defaults/main.yml      # Default (low-priority) variables
+    │   └── meta/main.yml          # Role metadata & dependencies
+    │
+    ├── nginx/                     # Web server role
+    ├── php/                       # PHP-FPM role
+    ├── mysql/                     # Database role
+    └── nodejs/                    # Node.js application role
