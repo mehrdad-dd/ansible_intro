@@ -1,0 +1,70 @@
+Best Practices Summary
+Practice	Implementation
+Use defaults/main.yml	Lowest priority variables that users can override
+Keep tasks modular	Split into logical files (install.yml, configure.yml)
+Include with conditions	Use include_tasks with when for flexibility
+Tag everything	Tags for roles, actions, and categories
+Validate before applying	Use validate parameter on critical configs
+Use handlers properly	Notify only when changes occur
+Document dependencies	Clear meta/main.yml with all dependencies
+Version your roles	Use Galaxy version or git tags
+Test in isolation	Each role should work independently
+Secure sensitive data	Use Ansible Vault for passwords, keys
+🔧 Troubleshooting
+Issue	Solution
+Role not found	Check roles_path in ansible.cfg
+Variable undefined	Check precedence: is it defined in right file?
+Template not found	Path is relative to templates/ in the role
+Dependency loop	Check for circular dependencies in meta files
+Handler not running	Ensure notify name matches exactly
+Tasks skipped	Check tags and when conditions
+Permission errors	Verify become: yes in playbook or ansible.cfg
+🎯 Exercises & Challenges
+Beginner
+
+    Add a new variable to common role for custom NTP servers
+
+    Create a new tag for timezone tasks
+
+    Override a default in host_vars for web01
+
+Intermediate
+
+    Create a new role for Redis installation
+
+    Add role dependency - Make PHP role depend on common
+
+    Implement conditional includes based on OS family
+
+Advanced
+
+    Create a complete LAMP stack (Linux, Apache, MySQL, PHP) using roles
+
+    Implement role testing with Molecule
+
+    Create a CI/CD pipeline that tests roles on commit
+
+    Publish a role to Ansible Galaxy
+
+📈 What's Next?
+
+    ⬅️ Stage 3: Security
+
+    ➡️ Stage 5: Ansible Vault - Coming next!
+
+📖 Resources
+
+    Ansible Roles Documentation
+
+    Ansible Galaxy
+
+    Ansible Best Practices
+
+    Molecule Testing Framework
+
+<div align="center">
+
+⬅ Previous Stage | Home | Next Stage ➡
+
+⭐ Part of the Ansible Learning Path
+</div> ```
