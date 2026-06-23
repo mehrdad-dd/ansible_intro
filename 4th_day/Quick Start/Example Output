@@ -1,0 +1,70 @@
+$ ansible-playbook playbooks/site.yml
+
+PLAY [Apply common configuration to ALL servers] ******************************
+
+TASK [common : [COMMON] Starting common server configuration] ****************
+ok: [web01] => {
+    "msg": "Configuring web01 (web01.example.com)\nOS: Ubuntu 22.04\nRole: web"
+}
+ok: [db01] => {
+    "msg": "Configuring db01 (db01.example.com)\nOS: Ubuntu 22.04\nRole: database"
+}
+
+TASK [common : Include package cache update] *********************************
+included: /roles/common/tasks/packages.yml for web01, db01
+
+TASK [common : [COMMON] Update apt cache] ************************************
+changed: [web01]
+changed: [db01]
+
+TASK [common : [COMMON] Install base packages] *******************************
+ok: [web01] => (item=curl)
+ok: [web01] => (item=wget)
+ok: [db01] => (item=curl)
+ok: [db01] => (item=wget)
+...
+
+PLAY [Configure web servers with Nginx + PHP] ********************************
+
+TASK [nginx : [NGINX] Starting Nginx configuration] **************************
+ok: [web01]
+
+TASK [nginx : Include installation tasks] ************************************
+included: /roles/nginx/tasks/install.yml for web01
+
+TASK [nginx : [NGINX] Add Nginx official repository] *************************
+changed: [web01]
+
+TASK [nginx : [NGINX] Install Nginx package] *********************************
+changed: [web01]
+
+TASK [nginx : [NGINX] Ensure Nginx is started and enabled] *******************
+ok: [web01]
+
+PLAY [Configure database servers] ********************************************
+
+TASK [mysql : [MYSQL] Starting MySQL configuration] **************************
+ok: [db01]
+
+TASK [mysql : [MYSQL] Install MySQL server] *********************************
+changed: [db01]
+
+PLAY [Post-deployment verification] ******************************************
+
+TASK [[VERIFY] Test web server accessibility] ********************************
+ok: [web01]
+
+TASK [[VERIFY] Display deployment summary] ***********************************
+ok: [web01] => {
+    "msg": "========================================\nDEPLOYMENT SUMMARY\n========================================\nEnvironment: production\nTimestamp: 2024-01-15T10:30:00Z\n\nServers Configured:\n- web01 (192.168.1.10)\n- db01 (192.168.1.20)\n\nWeb Servers: 1\nDB Servers: 1\n========================================\n"
+}
+
+RUNNING HANDLER [nginx : restart nginx] **************************************
+changed: [web01]
+
+RUNNING HANDLER [mysql : restart mysql] **************************************
+changed: [db01]
+
+PLAY RECAP ********************************************************************
+db01  : ok=18  changed=8   unreachable=0  failed=0  skipped=2  rescued=0
+web01 : ok=24  changed=10  unreachable=0  failed=0  skipped=1  rescued=0
