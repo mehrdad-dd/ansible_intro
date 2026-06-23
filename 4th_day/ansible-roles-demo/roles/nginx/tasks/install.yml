@@ -8,4 +8,26 @@
     repo: "deb https://nginx.org/packages/ubuntu/ {{ ansible_distribution_release }} nginx"
     state: present
     filename: nginx
- 
+  when: ansible_os_family == "Debian"
+  tags: [nginx, repo, install]
+
+- name: "[NGINX] Add Nginx repository key"
+  ansible.builtin.apt_key:
+    url: https://nginx.org/keys/nginx_signing.key
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: [nginx, repo, install]
+
+- name: "[NGINX] Install Nginx package"
+  ansible.builtin.package:
+    name: "nginx={{ nginx_version | default(omit) }}"
+    state: "{{ nginx_version | ternary('present', 'latest') }}"
+  notify: restart nginx
+  tags: [nginx, install]
+
+- name: "[NGINX] Ensure Nginx is started and enabled"
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes
+  tags: [nginx, service, install]
