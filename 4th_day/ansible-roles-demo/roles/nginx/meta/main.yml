@@ -1,0 +1,29 @@
+---
+galaxy_info:
+  author: Your Name
+  description: Nginx web server with SSL and monitoring
+  company: Your Company
+  license: MIT
+  min_ansible_version: "2.9"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+  galaxy_tags:
+    - web
+    - nginx
+    - ssl
+    - reverse-proxy
+
+# وابستگی‌ها: نقش nginx به نقش common نیاز دارد
+dependencies:
+  - role: common
+    vars:
+      # می‌توانیم متغیرهای نقش وابسته را اینجا بازنویسی کنیم
+      common_packages:
+        - curl
+        - wget
+        - git
+        - vim
+        - htop
