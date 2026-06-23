@@ -1,0 +1,67 @@
+---
+# ============================================================================
+# ROLE DEFAULTS - مقادیر پیش‌فرض نقش Common
+# ============================================================================
+# این متغیرها کمترین اولویت را دارند و می‌توانند در هر سطحی بازنویسی شوند
+# ترتیب اولویت: role defaults < inventory vars < playbook vars < role vars < host vars < extra vars
+
+# بسته‌های پایه که روی همه سرورها نصب می‌شوند
+common_packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - iotop
+  - net-tools
+  - dnsutils
+  - software-properties-common
+  - unzip
+  - zip
+  - rsync
+  - ntp
+  - tzdata
+
+# منطقه زمانی پیش‌فرض
+common_timezone: "UTC"
+
+# تنظیمات DNS
+common_dns_servers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+# تنظیمات NTP
+common_ntp_servers:
+  - 0.pool.ntp.org
+  - 1.pool.ntp.org
+  - 2.pool.ntp.org
+
+# تنظیمات فایروال (UFW)
+common_ufw_enabled: true
+common_ufw_default_incoming: deny
+common_ufw_default_outgoing: allow
+
+# کاربران سیستم
+common_users:
+  - username: admin
+    groups: [sudo, adm]
+    shell: /bin/bash
+    create_home: yes
+
+# تنظیمات SSH
+common_ssh_port: 22
+common_ssh_permit_root_login: "no"
+common_ssh_password_auth: "no"
+
+# تنظیمات swap
+common_swap_size_mb: 2048
+
+# به‌روزرسانی خودکار بسته‌ها
+common_unattended_upgrades: false
+
+# تنظیمات گزارش‌گیری
+common_logrotate_retention: 30
+
+# مانیتورینگ
+common_monitoring_enabled: true
+common_node_exporter_port: 9100
