@@ -1,0 +1,41 @@
+Testing Your Roles
+1. Syntax Check
+bash
+
+# Check syntax of all files
+ansible-playbook playbooks/site.yml --syntax-check
+
+# Lint with ansible-lint
+ansible-lint playbooks/site.yml
+ansible-lint roles/
+
+2. Dry Run with Diff
+bash
+
+# See what would change
+ansible-playbook playbooks/site.yml --check --diff
+
+# Save diff output for review
+ansible-playbook playbooks/site.yml --check --diff > changes.diff
+
+3. Test with Molecule (Advanced)
+bash
+
+# Install molecule
+pip install molecule molecule-docker
+
+# Initialize test for a role
+cd roles/nginx
+molecule init scenario -r nginx -d docker
+
+# Run tests
+molecule test
+
+4. Validate Templates
+bash
+
+# Render template locally to check output
+ansible all -m template \
+  -a "src=roles/nginx/templates/nginx.conf.j2 dest=/tmp/test.conf" \
+  --check --diff
+
