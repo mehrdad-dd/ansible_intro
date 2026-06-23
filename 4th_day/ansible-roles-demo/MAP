@@ -1,0 +1,132 @@
+ansible-roles-demo/
+├── ansible.cfg                    # تنظیمات Ansible
+├── inventory/
+│   ├── production/
+│   │   ├── hosts.yml              # فایل موجودی اصلی
+│   │   ├── group_vars/
+│   │   │   ├── all.yml            # متغیرهای همه گروه‌ها
+│   │   │   ├── webservers.yml     # متغیرهای وب سرورها
+│   │   │   └── dbservers.yml      # متغیرهای دیتابیس سرورها
+│   │   └── host_vars/
+│   │       ├── web01.yml          # متغیرهای اختصاصی web01
+│   │       └── db01.yml           # متغیرهای اختصاصی db01
+│   └── staging/
+│       └── hosts.yml              # محیط استیجینگ
+├── playbooks/
+│   ├── site.yml                   # Playbook اصلی
+│   ├── webservers.yml             # Playbook وب سرورها
+│   ├── dbservers.yml              # Playbook دیتابیس
+│   └── deploy_app.yml             # Playbook دپلوی اپلیکیشن
+├── roles/
+│   ├── common/                    # نقش مشترک بین همه سرورها
+│   │   ├── tasks/
+│   │   │   ├── main.yml           # وظایف اصلی
+│   │   │   ├── packages.yml       # نصب بسته‌های پایه
+│   │   │   ├── security.yml       # تنظیمات امنیتی
+│   │   │   ├── monitoring.yml     # تنظیمات مانیتورینگ
+│   │   │   └── timezone.yml       # تنظیم منطقه زمانی
+│   │   ├── handlers/
+│   │   │   └── main.yml           # هندلرها
+│   │   ├── templates/
+│   │   │   ├── hosts.j2           # تنظیمات /etc/hosts
+│   │   │   ├── resolv.conf.j2     # تنظیمات DNS
+│   │   │   └── motd.j2            # پیام خوش‌آمدگویی
+│   │   ├── files/
+│   │   │   ├── bashrc.custom      # تنظیمات سفارشی bash
+│   │   │   └── vimrc.custom       # تنظیمات سفارشی vim
+│   │   ├── vars/
+│   │   │   └── main.yml           # متغیرهای داخلی نقش
+│   │   ├── defaults/
+│   │   │   └── main.yml           # مقادیر پیش‌فرض
+│   │   └── meta/
+│   │       └── main.yml           # اطلاعات و وابستگی‌ها
+│   │
+│   ├── nginx/                     # نقش وب سرور Nginx
+│   │   ├── tasks/
+│   │   │   ├── main.yml           # شامل کردن فایل‌های دیگر
+│   │   │   ├── install.yml        # نصب Nginx
+│   │   │   ├── configure.yml      # تنظیمات Nginx
+│   │   │   ├── vhosts.yml         # میزبان‌های مجازی
+│   │   │   ├── ssl.yml            # تنظیمات SSL
+│   │   │   └── monitoring.yml     # تنظیمات مانیتورینگ
+│   │   ├── handlers/
+│   │   │   └── main.yml           # راه‌اندازی مجدد سرویس
+│   │   ├── templates/
+│   │   │   ├── nginx.conf.j2      # کانفیگ اصلی Nginx
+│   │   │   ├── vhost.conf.j2      # قالب میزبان مجازی
+│   │   │   ├── ssl.conf.j2        # تنظیمات SSL
+│   │   │   └── status.conf.j2     # صفحه وضعیت
+│   │   ├── files/
+│   │   │   ├── security.conf      # تنظیمات امنیتی اضافه
+│   │   │   └── error_pages/       # صفحات خطای سفارشی
+│   │   │       ├── 404.html
+│   │   │       └── 50x.html
+│   │   ├── vars/
+│   │   │   └── main.yml
+│   │   ├── defaults/
+│   │   │   └── main.yml
+│   │   └── meta/
+│   │       └── main.yml           # وابستگی به نقش common
+│   │
+│   ├── php/                       # نقش PHP-FPM
+│   │   ├── tasks/
+│   │   │   ├── main.yml
+│   │   │   ├── install.yml
+│   │   │   ├── configure.yml
+│   │   │   └── extensions.yml
+│   │   ├── handlers/
+│   │   │   └── main.yml
+│   │   ├── templates/
+│   │   │   ├── php.ini.j2
+│   │   │   ├── www.conf.j2
+│   │   │   └── php-fpm.conf.j2
+│   │   ├── vars/
+│   │   │   └── main.yml
+│   │   ├── defaults/
+│   │   │   └── main.yml
+│   │   └── meta/
+│   │       └── main.yml
+│   │
+│   ├── mysql/                     # نقش پایگاه داده MySQL
+│   │   ├── tasks/
+│   │   │   ├── main.yml
+│   │   │   ├── install.yml
+│   │   │   ├── configure.yml
+│   │   │   ├── databases.yml
+│   │   │   ├── users.yml
+│   │   │   ├── replication.yml
+│   │   │   └── backup.yml
+│   │   ├── handlers/
+│   │   │   └── main.yml
+│   │   ├── templates/
+│   │   │   ├── my.cnf.j2
+│   │   │   ├── mysqld.cnf.j2
+│   │   │   └── backup.sh.j2
+│   │   ├── files/
+│   │   │   └── init.sql
+│   │   ├── vars/
+│   │   │   └── main.yml
+│   │   ├── defaults/
+│   │   │   └── main.yml
+│   │   └── meta/
+│   │       └── main.yml
+│   │
+│   └── nodejs/                    # نقش اپلیکیشن Node.js
+│       ├── tasks/
+│       │   ├── main.yml
+│       │   ├── install.yml
+│       │   ├── deploy.yml
+│       │   └── pm2.yml
+│       ├── handlers/
+│       │   └── main.yml
+│       ├── templates/
+│       │   ├── app.env.j2
+│       │   ├── ecosystem.config.js.j2
+│       │   └── nginx-node.conf.j2
+│       ├── vars/
+│       │   └── main.yml
+│       ├── defaults/
+│       │   └── main.yml
+│       └── meta/
+│           └── main.yml
+└── README.md
