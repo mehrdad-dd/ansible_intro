@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant P as Playbook (site.yml)
+    participant CR as Common Role
+    participant NR as Nginx Role
+    participant MR as MySQL Role
+    participant H as Handler
+    
+    P->>CR: 1. Execute on ALL hosts
+    Note over CR: Packages, Security,<br/>Timezone, Monitoring
+    CR-->>P: ✓ Complete
+    
+    P->>NR: 2. Execute on webservers
+    Note over NR: Install Nginx,<br/>Configure VHosts,<br/>Setup SSL
+    NR->>H: Notify: restart nginx
+    NR-->>P: ✓ Complete
+    
+    P->>MR: 3. Execute on dbservers
+    Note over MR: Install MySQL,<br/>Create Databases,<br/>Setup Users
+    MR->>H: Notify: restart mysql
+    MR-->>P: ✓ Complete
+    
+    P->>H: 4. Run all handlers
+    H-->>P: ✓ Handlers executed
+    
+    P->>P: 5. Post-deployment verification
