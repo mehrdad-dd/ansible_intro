@@ -1,0 +1,63 @@
+🎓 Key Concepts Explained
+1. Role Directory Structure
+text
+
+role_name/
+├── tasks/       # 🎯 What the role does
+├── handlers/    # 🔄 Triggered actions
+├── templates/   # 📝 Jinja2 templates
+├── files/       # 📄 Static files
+├── vars/        # 📊 High-priority variables
+├── defaults/    # ⚙️ Low-priority defaults
+└── meta/        # 📋 Dependencies & info
+
+2. Variable Precedence (Most Important!)
+text
+
+Lowest Priority
+    ↓
+  role defaults     (roles/X/defaults/main.yml)
+  inventory vars    (group_vars/all.yml)
+  playbook vars     (vars in playbook)
+  role vars         (roles/X/vars/main.yml)
+  host vars         (host_vars/hostname.yml)
+  extra vars        (-e "key=value")
+    ↓
+Highest Priority
+
+3. Task Inclusion Types
+yaml
+
+# Static import - processed at playbook parse time
+- import_tasks: static.yml
+  when: condition  # ❌ Doesn't work - imported always
+
+# Dynamic include - processed at runtime
+- include_tasks: dynamic.yml
+  when: condition  # ✅ Works - included only if condition true
+
+4. Role Dependencies
+yaml
+
+# roles/nginx/meta/main.yml
+dependencies:
+  - role: common          # Run common before nginx
+  - role: ssl             # Run ssl before nginx
+    vars:                 # Pass variables to dependency
+      ssl_cert_path: /etc/nginx/ssl
+
+5. Tags Strategy
+yaml
+
+# In role tasks:
+- name: Install packages
+  ansible.builtin.apt:
+    name: nginx
+  tags: 
+    - nginx       # Role-specific
+    - install     # Action type
+    - packages    # Category
+
+# Usage:
+ansible-playbook site.yml --tags "nginx,install"
+ansible-playbook site.yml --skip-tags "monitoring
