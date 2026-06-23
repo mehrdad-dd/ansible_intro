@@ -1,0 +1,11 @@
+---
+# ============================================================================
+# NGINX INSTALLATION TASKS
+# ============================================================================
+
+- name: "[NGINX] Add Nginx official repository"
+  ansible.builtin.apt_repository:
+    repo: "deb https://nginx.org/packages/ubuntu/ {{ ansible_distribution_release }} nginx"
+    state: present
+    filename: nginx
+ 
