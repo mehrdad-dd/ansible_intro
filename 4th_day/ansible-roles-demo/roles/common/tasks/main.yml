@@ -1,0 +1,158 @@
+---
+# ============================================================================
+# ROLE TASKS - وظایف اصلی نقش Common
+# این فایل مانند یک index عمل می‌کند و فایل‌های دیگر را include می‌کند
+# ============================================================================
+
+# نمایش اطلاعات شروع نقش
+- name: "[COMMON] Starting common server configuration"
+  ansible.builtin.debug:
+    msg: |
+      Configuring {{ ansible_hostname }} ({{ ansible_fqdn }})
+      OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+      Role: {{ server_role | default('undefined') }}
+  tags: [always, debug]
+
+# ------------------------------------------------------------
+# شامل کردن زیر-وظایف به ترتیب منطقی
+# استفاده از tags برای کنترل اجرا
+# ------------------------------------------------------------
+
+# 1. به‌روزرسانی کش بسته‌ها
+- name: Include package cache update
+  ansible.builtin.include_tasks: packages.yml
+  tags: [packages, apt, yum]
+
+# 2. تنظیم منطقه زمانی
+- name: Include timezone configuration
+  ansible.builtin.include_tasks: timezone.yml
+  tags: [timezone, ntp]
+
+# 3. تنظیمات امنیتی پایه
+- name: Include security configuration
+  ansible.builtin.include_tasks: security.yml
+  tags: [security, ssh, firewall]
+
+# 4. تنظیمات مانیتورینگ
+- name: Include monitoring setup
+  ansible.builtin.include_tasks: monitoring.yml
+  tags: [monitoring, prometheus]
+  when: common_monitoring_enabled | bool
+
+# ------------------------------------------------------------
+# استقرار فایل‌های پیکربندی از طریق Template
+# ------------------------------------------------------------
+
+- name: "[COMMON] Configure /etc/hosts file"
+  ansible.builtin.template:
+    # مسیر فایل قالب نسبت به دایرکتوری templates نقش
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [config, hosts]
+
+- name: "[COMMON] Configure DNS resolvers"
+  ansible.builtin.template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [config, dns, resolv]
+
+- name: "[COMMON] Deploy custom MOTD (Message of the Day)"
+  ansible.builtin.template:
+    src: motd.j2
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [config, motd]
+
+# ------------------------------------------------------------
+# کپی فایل‌های استاتیک
+# ------------------------------------------------------------
+
+- name: "[COMMON] Deploy custom bashrc for all users"
+  ansible.builtin.copy:
+    # مسیر فایل نسبت به دایرکتوری files نقش
+    src: bashrc.custom
+    dest: /etc/bash.bashrc.custom
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [config, bash, shell]
+
+- name: "[COMMON] Source custom bashrc in system bashrc"
+  ansible.builtin.lineinfile:
+    path: /etc/bash.bashrc
+    line: "source /etc/bash.bashrc.custom"
+    state: present
+    insertafter: EOF
+  tags: [config, bash, shell]
+
+- name: "[COMMON] Deploy custom vimrc"
+  ansible.builtin.copy:
+    src: vimrc.custom
+    dest: /etc/vim/vimrc.local
+    owner: root
+    group: root
+    mode: '0644'
+  tags: [config, vim, editor]
+
+# ------------------------------------------------------------
+# ایجاد swap file (اگر حافظه کم باشد)
+# ------------------------------------------------------------
+
+- name: "[COMMON] Check current swap size"
+  ansible.builtin.command: swapon --show=SIZE --noheadings --bytes
+  register: current_swap
+  changed_when: false
+  tags: [swap, performance]
+
+- name: "[COMMON] Create swap file if needed"
+  block:
+    - name: Allocate swap file
+      ansible.builtin.command: "dd if=/dev/zero of=/swapfile bs=1M count={{ common_swap_size_mb }}"
+      args:
+        creates: /swapfile
+    
+    - name: Set correct permissions on swap file
+      ansible.builtin.file:
+        path: /swapfile
+        owner: root
+        group: root
+        mode: '0600'
+    
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      when: swapfile_check.stat.exists
+    
+    - name: Enable swap file
+      ansible.builtin.command: swapon /swapfile
+      
+    - name: Add swap to fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: '/swapfile none swap sw 0 0'
+        state: present
+  when: 
+    - ansible_memory_mb.real.total < 2048
+    - common_swap_size_mb > 0
+  tags: [swap, performance]
+
+# ------------------------------------------------------------
+# جمع‌بندی و گزارش
+# ------------------------------------------------------------
+
+- name: "[COMMON] Common configuration completed successfully"
+  ansible.builtin.debug:
+    msg: |
+      ✅ Common role applied on {{ ansible_hostname }}
+      - Timezone: {{ common_timezone }}
+      - Packages: {{ common_packages | length }} installed
+      - Monitoring: {{ 'Enabled' if common_monitoring_enabled else 'Disabled' }}
+      - Firewall: {{ 'Active' if common_ufw_enabled else 'Inactive' }}
+  tags: [always, debug]
