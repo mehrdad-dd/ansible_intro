@@ -1,0 +1,52 @@
+---
+# ============================================================================
+# NGINX ROLE - Main Tasks
+# ============================================================================
+
+- name: "[NGINX] Starting Nginx configuration for {{ ansible_hostname }}"
+  ansible.builtin.debug:
+    msg: |
+      Installing Nginx {{ nginx_version | default('latest') }}
+      Worker Processes: {{ nginx_worker_processes }}
+      Worker Connections: {{ nginx_worker_connections }}
+  tags: [always]
+
+# شامل کردن زیر-وظایف
+- name: Include installation tasks
+  ansible.builtin.include_tasks: install.yml
+  tags: [nginx, install]
+
+- name: Include configuration tasks
+  ansible.builtin.include_tasks: configure.yml
+  tags: [nginx, config]
+
+- name: Include virtual hosts configuration
+  ansible.builtin.include_tasks: vhosts.yml
+  tags: [nginx, vhosts]
+
+- name: Include SSL configuration
+  ansible.builtin.include_tasks: ssl.yml
+  tags: [nginx, ssl]
+  when: nginx_ssl_enabled | default(true)
+
+- name: Include monitoring endpoints
+  ansible.builtin.include_tasks: monitoring.yml
+  tags: [nginx, monitoring]
+
+- name: "[NGINX] Verify Nginx configuration"
+  ansible.builtin.command: nginx -t
+  register: nginx_test
+  changed_when: false
+  failed_when: 
+    - nginx_test.rc != 0
+    - "'syntax is ok' not in nginx_test.stderr"
+  tags: [nginx, validate, always]
+
+- name: "[NGINX] Nginx installation and configuration completed"
+  ansible.builtin.debug:
+    msg: |
+      ✅ Nginx configured successfully on {{ ansible_hostname }}
+      - Version: {{ nginx_version | default('latest') }}
+      - Virtual Hosts: {{ nginx_vhosts | length }}
+      - SSL: {{ 'Enabled' if nginx_ssl_enabled else 'Disabled' }}
+  tags: [always]
