@@ -1,0 +1,14 @@
+# Edit group variables
+vim inventory/production/group_vars/all.yml
+
+# Example:
+cat > inventory/production/group_vars/all.yml << 'EOF'
+---
+environment: production
+organization: MyCompany
+common_timezone: "America/New_York"
+common_ssh_port: 2222
+EOF
+
+# Configure web servers
+vim inventory/production/group_vars/webservers.yml
