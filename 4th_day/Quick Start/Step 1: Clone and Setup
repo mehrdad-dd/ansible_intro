@@ -1,0 +1,13 @@
+# Clone the repository
+git clone https://github.com/your-username/ansible-roles-demo.git
+cd ansible-roles-demo
+
+# Set up Python virtual environment (recommended)
+python3 -m venv ansible-env
+source ansible-env/bin/activate
+
+# Install Ansible
+pip install ansible ansible-lint
+
+# Verify installation
+ansible --version
