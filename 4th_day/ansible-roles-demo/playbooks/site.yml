@@ -1,0 +1,122 @@
+---
+# ============================================================================
+# MAIN PLAYBOOK - اجرای تمام نقش‌ها روی سرورهای مناسب
+# ============================================================================
+# این فایل نقطه ورود اصلی است و همه چیز را هماهنگ می‌کند
+
+- name: Apply common configuration to ALL servers
+  hosts: all
+  become: yes
+  
+  # اجرای نقش common روی تمام سرورها
+  roles:
+    - role: common
+      tags: [common, base]
+
+# ------------------------------------------------------------
+
+- name: Configure web servers with Nginx + PHP + Node.js
+  hosts: webservers
+  become: yes
+  
+  # متغیرهای مخصوص این Play
+  vars:
+    app_deploy: true
+    ssl_cert_path: /etc/nginx/ssl
+    
+  # اجرای نقش‌های وب سرور
+  roles:
+    - role: nginx
+      tags: [nginx, web]
+    - role: php
+      tags: [php, fpm]
+      when: install_php | default(true)
+    - role: nodejs
+      tags: [nodejs, app]
+      when: install_nodejs | default(false)
+  
+  # وظایف اضافی مخصوص وب سرورها
+  tasks:
+    - name: "[WEB] Ensure web directories exist"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+      loop:
+        - /var/www/html
+        - /var/www/logs
+        - /var/www/backups
+      tags: [web, directories]
+
+# ------------------------------------------------------------
+
+- name: Configure database servers
+  hosts: dbservers
+  become: yes
+  
+  vars:
+    mysql_databases:
+      - name: app_production
+        encoding: utf8mb4
+        collation: utf8mb4_unicode_ci
+      - name: app_staging
+        encoding: utf8mb4
+        collation: utf8mb4_unicode_ci
+  
+  roles:
+    - role: mysql
+      tags: [mysql, database]
+
+# ------------------------------------------------------------
+
+- name: Configure monitoring server
+  hosts: monitoring
+  become: yes
+  
+  roles:
+    - role: common
+      tags: [common, monitoring]
+  
+  tasks:
+    - name: "[MONITORING] Placeholder for Prometheus/Grafana setup"
+      ansible.builtin.debug:
+        msg: "Monitoring server configuration (to be implemented)"
+      tags: [monitoring]
+
+# ------------------------------------------------------------
+
+- name: Post-deployment verification
+  hosts: all
+  become: no
+  
+  tasks:
+    - name: "[VERIFY] Test web server accessibility"
+      ansible.builtin.uri:
+        url: "http://{{ ansible_host }}"
+        return_content: yes
+      register: web_response
+      when: "'webservers' in group_names"
+      tags: [verify, test]
+      ignore_errors: yes
+    
+    - name: "[VERIFY] Display deployment summary"
+      ansible.builtin.debug:
+        msg: |
+          ========================================
+          DEPLOYMENT SUMMARY
+          ========================================
+          Environment: {{ environment }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+          
+          Servers Configured:
+          {% for host in ansible_play_hosts %}
+          - {{ hostvars[host].ansible_hostname }} ({{ hostvars[host].ansible_host }})
+          {% endfor %}
+          
+          Web Servers: {{ groups['webservers'] | length }}
+          DB Servers: {{ groups['dbservers'] | length }}
+          ========================================
+      run_once: true
+      tags: [always, verify]
