@@ -1,0 +1,49 @@
+---
+# ============================================================================
+# ROLE METADATA - اطلاعات نقش Common
+# ============================================================================
+# این فایل وابستگی‌ها، پلتفرم‌های پشتیبانی شده و اطلاعات نقش را مشخص می‌کند
+
+galaxy_info:
+  # نام نویسنده یا سازمان
+  author: Your Name
+  # توضیح نقش
+  description: Common server configuration for all environments
+  # شرکت یا سازمان
+  company: Your Company
+  
+  # مجوز (license)
+  license: MIT
+  
+  # حداقل نسخه Ansible
+  min_ansible_version: "2.9"
+  
+  # پلتفرم‌های پشتیبانی شده
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal    # 20.04
+        - jammy    # 22.04
+    - name: Debian
+      versions:
+        - bullseye # 11
+        - bookworm # 12
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  
+  # برچسب‌های Galaxy
+  galaxy_tags:
+    - system
+    - security
+    - common
+    - base
+    - monitoring
+
+# وابستگی‌ها (dependencies)
+# این نقش به نقش دیگری وابسته نیست
+dependencies: []
+
+# اجازه استفاده از این نقش
+allow_duplicates: false
