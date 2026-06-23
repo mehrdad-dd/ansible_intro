@@ -1,0 +1,14 @@
+# Check mode - see what will change
+ansible-playbook playbooks/site.yml --check --diff
+
+# Run with verbose output
+ansible-playbook playbooks/site.yml -v
+
+# Run specific roles only
+ansible-playbook playbooks/site.yml --tags "common,nginx"
+
+# Run on specific hosts
+ansible-playbook playbooks/site.yml --limit web01
+
+# Run with profile tasks (see execution time)
+ansible-playbook playbooks/site.yml --extra-vars "callback_whitelist=profile_tasks"
