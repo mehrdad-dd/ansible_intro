@@ -11,3 +11,4 @@ stage-3-user-security/
 └── docs/
     ├── security_checklist.md         # Manual verification steps
     └── troubleshooting.md            # Common issues & solutions
+
