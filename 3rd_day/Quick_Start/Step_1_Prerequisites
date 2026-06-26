@@ -3,6 +3,6 @@ pip install passlib  # For password hashing
 
 # Verify Ansible version
 ansible --version  # Should be 2.9+
-
 # Install required collection
 ansible-galaxy collection install ansible.posix
+
