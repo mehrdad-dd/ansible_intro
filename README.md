@@ -4,7 +4,6 @@ Ansible Learning Process for Beginners
 ```markdown
 # Ansible Capabilities Demonstration Playbook
 
-
 <img src="https://img.shields.io/badge/ansible-2.9+-blue.svg" alt="Ansible Version">
 <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
 <img src="https://img.shields.io/badge/platform-linux-lightgrey.svg" alt="Platform">
