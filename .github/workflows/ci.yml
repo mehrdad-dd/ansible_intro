@@ -39,7 +39,11 @@ jobs:
       - name: Lint new Ansible lessons
         run: |
           .venv/bin/ansible-lint --profile=basic --offline \
-            {6th..20th}_day/playbook.yml
+            6th_day/playbook.yml 7th_day/playbook.yml 8th_day/playbook.yml \
+            9th_day/playbook.yml 10th_day/playbook.yml 11th_day/playbook.yml \
+            12th_day/playbook.yml 13th_day/playbook.yml 14th_day/playbook.yml \
+            15th_day/playbook.yml 16th_day/playbook.yml 17th_day/playbook.yml \
+            18th_day/playbook.yml 19th_day/playbook.yml 20th_day/playbook.yml
 
       - name: Compile inventory and test utilities
         run: .venv/bin/python -m compileall -q tools 16th_day/inventory.py
