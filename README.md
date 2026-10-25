@@ -1,5 +1,5 @@
-# Ansible Tutorial — آموزش Ansible از صفر تا پیشرفته (فارسی + English)
-
+# Ansible Tutorial bilingual - English & Persian
+# آموزش انسیبل 0 تا 100 - دوزبانه، فارسی و انگلیسی
 **Learn Ansible deeply, without fluff. آموزش مفهومی، کوتاه و کاربردی Ansible با مثال‌های قابل اجرا.**
 
 [![Ansible](https://img.shields.io/badge/Ansible-Playbooks-EE0000?logo=ansible&logoColor=white)](https://docs.ansible.com/)
