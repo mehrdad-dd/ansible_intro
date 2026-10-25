@@ -1,0 +1,36 @@
+---
+# Shared capstone: configure, render, verify, notify.
+- name: Build a small configuration pipeline
+  hosts: lab
+  gather_facts: false
+  vars:
+    service_port: 8080
+    service_environment: staging
+    output_dir: "{{ playbook_dir }}/rendered"
+  tasks:
+    - name: Create output directory
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Render the application configuration
+      ansible.builtin.template:
+        src: templates/service.conf.j2
+        dest: "{{ output_dir }}/service.conf"
+        mode: '0644'
+      notify: Report config update
+
+    - name: Inspect the generated configuration
+      ansible.builtin.stat:
+        path: "{{ output_dir }}/service.conf"
+      register: rendered
+
+    - name: Assert that the configuration exists
+      ansible.builtin.assert:
+        that: rendered.stat.exists
+
+  handlers:
+    - name: Report config update
+      ansible.builtin.debug:
+        msg: Configuration changed; validate before reloading a real service.

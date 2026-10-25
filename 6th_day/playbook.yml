@@ -1,0 +1,15 @@
+---
+# Shared example: inventory, group_vars, variable precedence.
+- name: Read lab inventory variables
+  hosts: lab
+  gather_facts: false
+  tasks:
+    - name: Explain effective settings
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} listens on {{ demo_port }} ({{ demo_region }})"
+
+    - name: Validate chosen port
+      ansible.builtin.assert:
+        that:
+          - demo_port | int > 0
+          - demo_port | int < 65536

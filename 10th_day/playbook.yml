@@ -1,0 +1,14 @@
+---
+# Shared example: static and dynamic task inclusion.
+- name: Reuse task files
+  hosts: lab
+  gather_facts: false
+  vars:
+    show_optional: true
+  tasks:
+    - name: Load tasks statically
+      ansible.builtin.import_tasks: tasks/prepare.yml
+
+    - name: Load optional tasks at runtime
+      ansible.builtin.include_tasks: tasks/optional.yml
+      when: show_optional | bool
