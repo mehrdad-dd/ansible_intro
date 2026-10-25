@@ -1,5 +1,0 @@
-# Check UFW status
-ansible all -m command -a "ufw status verbose"
-
-# List rules with numbers
-ansible all -m command -a "ufw status numbered"
