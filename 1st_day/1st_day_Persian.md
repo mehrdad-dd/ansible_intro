@@ -1,23 +1,13 @@
-# روز اول | اولین Playbook
+# روز 1 | اولین Playbook؛ ماژول، متغیر و Handler در Ansible
 
-[English](1st_day_English.md)
+[English](1st_day_English.md) · [فهرست دوره](../README.md)
 
-**هدف:** با یک Playbook کوچک Nginx نصب کنیم، صفحه HTML بسازیم و اطلاعات دیسک را ببینیم.
+> **مسئله:** Playbook وضعیت مطلوب میزبان را تعریف می‌کند؛ فقط فهرست دستورهای پشت‌سرهم نیست.
 
-## مفهوم در یک نگاه
+### مدل ذهنی
+Task یک ماژول را اجرا می‌کند، متغیرها رفتار را تعیین می‌کنند و Handler در صورت تغییر فراخوانی می‌شود.
 
-| مفهوم | مثال |
-|---|---|
-| `hosts` | `lab` |
-| `become` | `true` |
-| `vars` | `web_package: nginx` |
-| وظیفه و ماژول | `ansible.builtin.apt` |
-| ثبت خروجی | `register` |
-| فقط هنگام تغییر | `notify` + handler |
-| اجرای بدون تغییر | `changed_when: false` |
-
-## فایل اجرایی مشترک
-
+### کد مشترک و قابل اجرا
 ```yaml
 ---
 # Day 1: tasks, variables, loops, conditionals, handlers.
@@ -72,25 +62,16 @@
         state: reloaded
 ```
 
-## ساختار
-
-```text
-1st_day/
-├── 1st_day_English.md
-├── 1st_day_Persian.md
-├── inventory.ini
-└── playbook.yml
-```
-
-## تست و اجرا
-
+### نحوه اجرا
 ```bash
 ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --syntax-check
-ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --check --diff
+# Run only inside a disposable Debian/Ubuntu VM:
 ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --ask-become-pass
 ```
 
 > [!WARNING]
-> Inventory نمونه به `localhost` اشاره می‌کند و اجرای واقعی بسته و سرویس روی همان سیستم را تغییر می‌دهد. فقط از ماشین آزمایشی Debian/Ubuntu استفاده کنید.
+> این آزمایش با sudo وب‌سرور نصب می‌کند؛ هرگز آن را مستقیم روی سرور عملیاتی اجرا نکن.
 
-**تمرین:** مقدار `page_title` را تغییر دهید، دوباره اجرا کنید و ببینید Handler فقط در زمان تغییر محتوا اجرا می‌شود.
+**تمرین یک دقیقه‌ای:** `page_title` را تغییر بده و رفتار Handler را مقایسه کن.
+
+**نکته:** فایل‌های نمونه از رمز و اطلاعات زیرساخت واقعی استفاده نمی‌کنند.

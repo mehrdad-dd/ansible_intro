@@ -1,23 +1,13 @@
-# Day 1 | Your First Playbook
+# Ansible Day 1 | First playbook: modules, variables, handlers
 
-[فارسی](1st_day_Persian.md)
+[فارسی](1st_day_Persian.md) · [Course index](../README.md)
 
-**Goal:** Install Nginx, publish an HTML page, and inspect disk usage in one small playbook.
+> **The problem:** A playbook states what each target host should look like, not just a list of commands.
 
-## Concepts at a glance
+### Mental model
+A task calls a module, variables configure behavior, and a notified handler reacts to change.
 
-| Concept | Example |
-|---|---|
-| `hosts` | `lab` |
-| `become` | `true` |
-| `vars` | `web_package: nginx` |
-| Task and module | `ansible.builtin.apt` |
-| Captured output | `register` |
-| Only on change | `notify` + handler |
-| Read-only command | `changed_when: false` |
-
-## Shared runnable playbook
-
+### Shared runnable example
 ```yaml
 ---
 # Day 1: tasks, variables, loops, conditionals, handlers.
@@ -72,25 +62,16 @@
         state: reloaded
 ```
 
-## Structure
-
-```text
-1st_day/
-├── 1st_day_English.md
-├── 1st_day_Persian.md
-├── inventory.ini
-└── playbook.yml
-```
-
-## Test and run
-
+### How to run
 ```bash
 ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --syntax-check
-ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --check --diff
+# Run only inside a disposable Debian/Ubuntu VM:
 ansible-playbook -i 1st_day/inventory.ini 1st_day/playbook.yml --ask-become-pass
 ```
 
 > [!WARNING]
-> The sample inventory points to `localhost`; real execution changes packages and services on that system. Use a disposable Debian/Ubuntu VM.
+> This lab installs Nginx with sudo. Never point a beginner lab at a production host.
 
-**Try:** Change `page_title`, run again, and observe that the handler runs only if the file content changes.
+**One-minute experiment:** Change `page_title` and compare the handler behavior.
+
+**Note:** Samples contain no real credentials or infrastructure details.
