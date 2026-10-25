@@ -4,4 +4,10 @@
 **/secrets.yml
 **/*.retry
 **/fetched/
+**/demo-output.txt
+**/demo-secret.txt
+**/rendered/
+.venv/
+.ansible/
+__pycache__/
 *.pyc
