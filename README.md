@@ -1,71 +1,43 @@
-# Ansible Capabilities Demonstration Playbook
+# Ansible Intro | آموزش کاربردی Ansible
 
-<img src="https://img.shields.io/badge/ansible-2.9+-blue.svg" alt="Ansible Version">
-<img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
-<img src="https://img.shields.io/badge/platform-linux-lightgrey.svg" alt="Platform">
+**فارسی:** آموزش گام‌به‌گام، کوتاه و عملی Ansible؛ هر درس = یک مفهوم، یک مثال و روش اجرا.
 
-A simple, well-documented Ansible playbook designed to illustrate fundamental Ansible concepts through a practical example: deploying and configuring an Nginx web server.
+**English:** Short, practical Ansible lessons; each day focuses on one concept, one runnable example, and verification.
 
----
+![Ansible](https://img.shields.io/badge/Ansible-Learning-EE0000?logo=ansible&logoColor=white) ![License](https://img.shields.io/badge/License-MIT-blue) ![Languages](https://img.shields.io/badge/Languages-FA%20%7C%20EN-555)
 
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Features Demonstrated](#features-demonstrated)
-- [Playbook Workflow](#playbook-workflow)
-- [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Usage](#usage)
-- [Example Output](#example-output)
-- [Playbook Structure Explained](#playbook-structure-explained)
-- [Key Ansible Concepts Covered](#key-ansible-concepts-covered)
-- [Customization](#customization)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
+## Learning path | مسیر یادگیری
 
----
+| Day | فارسی | English | Focus |
+|---|---|---|---|
+| 1 | [روز اول](1st_day/1st_day_Persian.md) | [Day 1](1st_day/1st_day_English.md) | Playbook, tasks, variables, handlers |
+| 2 | [روز دوم](2nd_day/2nd_day_Persian.md) | [Day 2](2nd_day/2nd_day_English.md) | Files, templates, Jinja2 |
+| 3 | [روز سوم](3rd_day/README.md) | [Day 3](3rd_day/README_EN.md) | Users, conditions, security basics |
+| 4 | [روز چهارم](4th_day/README.md) | [Day 4](4th_day/README_EN.md) | Roles and reuse |
+| 5 | [روز پنجم](5th_day/README.md) | [Day 5](5th_day/README_EN.md) | Ansible Vault |
 
-## 🚀 Overview
+## Quick start | شروع سریع
 
-| **Attribute**       | **Details**                         |
-|----------------------|-------------------------------------|
-| **Purpose**         | Showcase core Ansible features      |
-| **Target Audience** | Ansible beginners / intermediate    |
-| **Demo Application**| Nginx web server                    |
-| **Supported OS**    | Debian/Ubuntu, RHEL/CentOS (partial)|
+```bash
+git clone https://github.com/mehrdad-dd/ansible_intro.git
+cd ansible_intro
+ansible --version
+ansible-playbook -i 2nd_day/inventory.ini 2nd_day/playbook.yml --syntax-check
+```
 
-This project provides a practical, step-by-step introduction to Ansible automation. By running a single playbook, you will see how Ansible handles package management, service control, file deployment, dynamic templating, conditionals, loops, variable registration, and event-driven handlers.
+**فارسی:** پیش از اجرای واقعی، Inventory، مسیرها، دسترسی sudo و تأثیر taskها را بررسی کنید. مثال‌ها برای VM آزمایشی Debian/Ubuntu طراحی شده‌اند. دستور `--syntax-check` اجرای واقعی نیست.
 
----
+**English:** Review inventory, paths, sudo access, and task effects before execution. Examples target a disposable Debian/Ubuntu VM. `--syntax-check` does not execute tasks.
 
-## ✨ Features Demonstrated
+> [!CAUTION]
+> Never commit tokens, SSH private keys, passwords, Vault password files, or actual infrastructure addresses. / رمزها، کلیدهای خصوصی و اطلاعات واقعی زیرساخت را منتشر نکنید.
 
-- ✅ **Idempotency** – Tasks only make changes when necessary
-- ✅ **Multi-OS Package Management** – Generic `package` module works across different Linux families
-- ✅ **Privilege Escalation** – Using `become: yes` for system-level operations
-- ✅ **Variables** – Centralized configuration values
-- ✅ **Jinja2 Templating** – Dynamic content generation with host-specific data
-- ✅ **Conditionals** – OS-specific task execution via `when`
-- ✅ **Loops** – Installing multiple packages with a single task
-- ✅ **Registering Output** – Capturing and displaying command results
-- ✅ **Handlers & Notifications** – Triggering service restart only when configuration changes
-- ✅ **File Management** – Setting ownership, group, and permissions
-- ✅ **Service Management** – Starting and enabling services at boot
-- ✅ **Debug Output** – Real-time visibility into playbook execution
+## Scope | محدوده
 
----
+**فارسی:** این مخزن یک مسیر آموزشی در حال توسعه است، نه ادعای پوشش تمام قابلیت‌های Ansible. دروس بعدی می‌توانند Inventory پیشرفته، Facts، Collections، Testing و CI را پوشش دهند.
 
-## 🔄 Playbook Workflow
+**English:** This is a growing learning path, not yet a complete reference. Planned next topics include advanced inventory, facts, collections, testing, and CI.
 
-```mermaid
-graph TD
-    A[Start] --> B[Update apt cache<br>Debian only]
-    B --> C[Install Nginx]
-    C --> D[Deploy custom index.html]
-    D --> E[Start & enable Nginx]
-    E --> F[Install additional tools<br>curl, git, htop]
-    F --> G[Check disk usage]
-    G --> H[Display disk info]
-    D -.->|Notify: if changed| I[Restart Nginx Handler]
-    I --> H
-    H --> J[End]
+## License | مجوز
+
+[MIT License](LICENSE) — free reuse with copyright and license notice preserved.

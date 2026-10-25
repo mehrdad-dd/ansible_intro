@@ -1,0 +1,7 @@
+# Local secrets and generated artifacts
+.vault_pass
+**/.vault_pass
+**/secrets.yml
+**/*.retry
+**/fetched/
+*.pyc
