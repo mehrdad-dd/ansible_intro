@@ -1,0 +1,26 @@
+---
+# Shared example: controlled failure and recovery.
+- name: Recover from a task failure
+  hosts: lab
+  gather_facts: false
+  vars:
+    demo_ready: false
+  tasks:
+    - name: Demonstrate a controlled recovery
+      block:
+        - name: Check readiness
+          ansible.builtin.assert:
+            that: demo_ready | bool
+            fail_msg: Demo is intentionally not ready.
+
+        - name: Report success
+          ansible.builtin.debug:
+            msg: The normal path completed.
+      rescue:
+        - name: Explain fallback action
+          ansible.builtin.debug:
+            msg: A controlled failure was handled.
+      always:
+        - name: Report cleanup phase
+          ansible.builtin.debug:
+            msg: The final step always runs.

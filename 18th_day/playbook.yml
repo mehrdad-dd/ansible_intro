@@ -1,0 +1,12 @@
+---
+# Shared example: intentionally bounded concurrency.
+- name: Configure hosts in small batches
+  hosts: lab
+  gather_facts: false
+  serial: 1
+  strategy: linear
+  tasks:
+    - name: Show current rollout host
+      ansible.builtin.debug:
+        msg: "Working on {{ inventory_hostname }}"
+      throttle: 1

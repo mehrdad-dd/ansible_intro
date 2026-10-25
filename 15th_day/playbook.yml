@@ -1,0 +1,13 @@
+---
+# Shared example: use unambiguous built-in module names.
+- name: Explain collections and module namespaces
+  hosts: lab
+  gather_facts: false
+  tasks:
+    - name: Use a fully qualified module name
+      ansible.builtin.debug:
+        msg: "Module namespace: ansible.builtin"
+
+    - name: Verify collection metadata example
+      ansible.builtin.assert:
+        that: "'ansible.builtin.debug'.startswith('ansible.builtin')"

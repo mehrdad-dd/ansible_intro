@@ -1,0 +1,9 @@
+---
+# Shared example: consume a dynamic inventory.
+- name: Use generated inventory groups
+  hosts: lab
+  gather_facts: false
+  tasks:
+    - name: Identify dynamically generated hosts
+      ansible.builtin.debug:
+        msg: "Dynamic inventory host: {{ inventory_hostname }}"

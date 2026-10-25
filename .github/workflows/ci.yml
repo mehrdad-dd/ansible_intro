@@ -1,0 +1,59 @@
+name: Ansible lessons CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Bilingual docs and Ansible tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout safely (pinned action, no stored credentials)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install isolated Ansible development tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install 'ansible-core>=2.19,<2.21' 'ansible-lint>=25,<27' 'yamllint>=1.35,<2'
+
+      - name: Check bilingual parity, links, and safety rules
+        run: .venv/bin/python tools/check_course.py
+
+      - name: Lint YAML source files
+        run: |
+          find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
+            -not -path './.venv/*' -not -path './.ansible/*' \
+            -print0 | xargs -0 .venv/bin/yamllint -c .yamllint
+
+      - name: Lint new Ansible lessons
+        run: |
+          .venv/bin/ansible-lint --profile=basic --offline \
+            6th_day/playbook.yml 7th_day/playbook.yml 8th_day/playbook.yml \
+            9th_day/playbook.yml 10th_day/playbook.yml 11th_day/playbook.yml \
+            12th_day/playbook.yml 13th_day/playbook.yml 14th_day/playbook.yml \
+            15th_day/playbook.yml 16th_day/playbook.yml 17th_day/playbook.yml \
+            18th_day/playbook.yml 19th_day/playbook.yml 20th_day/playbook.yml
+
+      - name: Compile inventory and test utilities
+        run: .venv/bin/python -m compileall -q tools 16th_day/inventory.py
+
+      - name: Syntax check all 20 lessons
+        run: |
+          export PATH="$PWD/.venv/bin:$PATH"
+          .venv/bin/python tools/run_examples.py --syntax
+
+      - name: Execute safe local lessons and verify idempotence
+        run: |
+          export PATH="$PWD/.venv/bin:$PATH"
+          .venv/bin/python tools/run_examples.py --smoke

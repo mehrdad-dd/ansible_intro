@@ -1,0 +1,4 @@
+---
+- name: Explain the static import
+  ansible.builtin.debug:
+    msg: Imported tasks are known before execution.

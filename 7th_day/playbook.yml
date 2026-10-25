@@ -1,0 +1,19 @@
+---
+# Shared example: host facts and conditions.
+- name: Use facts for conditional behavior
+  hosts: lab
+  gather_facts: true
+  tasks:
+    - name: Show the detected operating system
+      ansible.builtin.debug:
+        msg: "{{ ansible_facts['distribution'] }} is in {{ ansible_facts['os_family'] }}"
+
+    - name: Explain a Debian-specific task
+      ansible.builtin.debug:
+        msg: This branch would manage APT packages.
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Explain the fallback branch
+      ansible.builtin.debug:
+        msg: This host is not in the Debian family.
+      when: ansible_facts['os_family'] != 'Debian'

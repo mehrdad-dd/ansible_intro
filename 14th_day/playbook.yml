@@ -1,0 +1,19 @@
+---
+# Shared example: bounded retries and a short async task.
+- name: Wait and retry safely
+  hosts: lab
+  gather_facts: false
+  tasks:
+    - name: Retry a harmless readiness check
+      ansible.builtin.command: /bin/true
+      register: readiness
+      changed_when: false
+      until: readiness.rc == 0
+      retries: 3
+      delay: 1
+
+    - name: Run a short asynchronous command
+      ansible.builtin.command: /bin/sleep 1
+      async: 10
+      poll: 1
+      changed_when: false

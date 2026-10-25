@@ -1,0 +1,8 @@
+all:
+  children:
+    lab:
+      hosts:
+        demo1:
+          ansible_connection: local
+        demo2:
+          ansible_connection: local

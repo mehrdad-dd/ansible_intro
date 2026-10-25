@@ -1,0 +1,20 @@
+---
+# Shared example: loop over normalized values.
+- name: Iterate over clean data
+  hosts: lab
+  gather_facts: false
+  vars:
+    input_ports: [443, 8080, 443, 80]
+  tasks:
+    - name: Normalize the list
+      ansible.builtin.set_fact:
+        unique_ports: "{{ input_ports | unique | sort | list }}"
+
+    - name: Show each unique port
+      ansible.builtin.debug:
+        msg: "Allowed demo port: {{ item }}"
+      loop: "{{ unique_ports }}"
+
+    - name: Verify deduplication
+      ansible.builtin.assert:
+        that: unique_ports | length == 3

@@ -1,0 +1,16 @@
+---
+# Shared example: no_log hides output, but does not encrypt values.
+- name: Demonstrate non-sensitive logging behavior
+  hosts: lab
+  gather_facts: false
+  vars:
+    synthetic_value: training-example-only
+  tasks:
+    - name: Suppress task output for a synthetic value
+      ansible.builtin.debug:
+        msg: "{{ synthetic_value }}"
+      no_log: true
+
+    - name: Explain the limitation
+      ansible.builtin.debug:
+        msg: Use Ansible Vault for secrets stored on disk.

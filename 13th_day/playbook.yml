@@ -1,0 +1,15 @@
+---
+# Shared example: delegate one task to the controller.
+- name: Delegate centrally, report per host
+  hosts: lab
+  gather_facts: false
+  tasks:
+    - name: Perform one central check
+      ansible.builtin.debug:
+        msg: Checked centrally on the control node.
+      delegate_to: localhost
+      run_once: true
+
+    - name: Report each inventory host
+      ansible.builtin.debug:
+        msg: "Current inventory host: {{ inventory_hostname }}"

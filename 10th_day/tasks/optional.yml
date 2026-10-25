@@ -1,0 +1,4 @@
+---
+- name: Explain the dynamic include
+  ansible.builtin.debug:
+    msg: This task was included at runtime.
