@@ -1,0 +1,51 @@
+---
+# Day 1: tasks, variables, loops, conditionals, handlers.
+- name: Deploy a simple Nginx page
+  hosts: lab
+  become: true
+  vars:
+    web_package: nginx
+    page_title: Ansible Demo
+  tasks:
+    - name: Refresh APT cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install web server and CLI tools
+      ansible.builtin.apt:
+        name:
+          - "{{ web_package }}"
+          - curl
+          - git
+        state: present
+
+    - name: Publish a welcome page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.html
+        content: "<h1>{{ page_title }}</h1>\n"
+        owner: root
+        group: root
+        mode: '0644'
+      notify: reload nginx
+
+    - name: Start and enable Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Get disk usage
+      ansible.builtin.command: df -h /
+      register: disk_usage
+      changed_when: false
+
+    - name: Show disk usage
+      ansible.builtin.debug:
+        msg: "{{ disk_usage.stdout }}"
+
+  handlers:
+    - name: reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
