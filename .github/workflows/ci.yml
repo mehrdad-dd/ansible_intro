@@ -30,6 +30,12 @@ jobs:
       - name: Check bilingual parity, links, and safety rules
         run: .venv/bin/python tools/check_course.py
 
+      - name: Verify website export contract
+        run: |
+          python3 -m unittest discover -s tools -p 'test_website_export.py' -v
+          python3 tools/export_website_content.py --output "$RUNNER_TEMP/ansible-content.v1.json"
+          python3 -m json.tool "$RUNNER_TEMP/ansible-content.v1.json" >/dev/null
+
       - name: Lint YAML source files
         run: |
           find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
